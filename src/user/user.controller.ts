@@ -1,19 +1,56 @@
-import { Controller, Post, Get, Query, Body, Param } from '@nestjs/common';
+import { Controller, Post, Get, Query, Body, Param, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
 import { UserService } from './user.service';
-import { BadRequestException } from '@nestjs/common';
-import { VerifyUserDto, IsUserVerifiedDto, GetReferalsCountDto, GetUserDataDto, CreateUserDto } from './dto/user.dto';
+import { ApiOkResponse, ApiCreatedResponse, ApiBadRequestResponse, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('users')
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post('create')
-  async createUser(@Body() createUserDto: CreateUserDto) {
+  @ApiCreatedResponse({
+    description: 'The user has been successfully created.',
+    schema: {
+      example: {
+        id: 3,
+        telegramId: '123456789',
+        username: '123456789',
+        isBaned: false,
+        isVerified: false,
+        createdAt: '2024-07-31T15:32:51.022Z',
+        inviterRefCode: '5678',
+        refCode: '123456789'
+      },
+      properties: {
+        id: { type: 'number' },
+        telegramId: { type: 'string' },
+        username: { type: 'string' },
+        isBaned: { type: 'boolean' },
+        isVerified: { type: 'boolean' },
+        createdAt: { type: 'string', format: 'date-time' },
+        inviterRefCode: { type: 'string', nullable: true },
+        refCode: { type: 'string' }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Bad Request.' })
+  async createUser(@Body() createUserDto) {
     return await this.userService.createUser(createUserDto);
   }
 
   @Post('is_user_verified')
-  async isUserVerified(@Body() body: IsUserVerifiedDto): Promise<{ isUser: boolean }> {
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'Returns whether the user is verified.',
+    schema: {
+      example: { isUser: true },
+      properties: {
+        isUser: { type: 'boolean' }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Bad Request.' })
+  async isUserVerified(@Body() body): Promise<{ isUser: boolean }> {
     const { userId } = body;
     try {
       return await this.userService.isUserVerified(userId);
@@ -23,9 +60,34 @@ export class UserController {
   }
 
   @Post('verify_user')
-  async verifyUser(
-    @Body() body: VerifyUserDto,
-  ): Promise<any> {
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'Verifies the user and returns the updated user data.',
+    schema: {
+      example: {
+        id: 2,
+        telegramId: '12345678',
+        username: '12345678',
+        isBaned: false,
+        isVerified: true,
+        createdAt: '2024-07-31T15:32:24.768Z',
+        inviterRefCode: '5678',
+        refCode: '12345678'
+      },
+      properties: {
+        id: { type: 'number' },
+        telegramId: { type: 'string' },
+        username: { type: 'string' },
+        isBaned: { type: 'boolean' },
+        isVerified: { type: 'boolean' },
+        createdAt: { type: 'string', format: 'date-time' },
+        inviterRefCode: { type: 'string', nullable: true },
+        refCode: { type: 'string' }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Bad Request.' })
+  async verifyUser(@Body() body): Promise<any> {
     const { userId } = body;
     try {
       return await this.userService.verifyUser(userId);
@@ -35,17 +97,55 @@ export class UserController {
   }
 
   @Get('referals_info')
-  async getReferalsCount(@Query() query: GetReferalsCountDto): Promise<{ count: number }> {
-    const { refId } = query;
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'Returns the count of referrals for the given refId.',
+    schema: {
+      example: { count: 2 },
+      properties: {
+        count: { type: 'number' }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Bad Request.' })
+  async getReferalsCount(@Query() query): Promise<{ count: number }> {
+    const { telegramId } = query;
     try {
-      return await this.userService.getReferalsCount(refId);
+      return await this.userService.getReferalsCount(telegramId);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
 
   @Get('get_user_data')
-  async getUserData(@Query() query: GetUserDataDto): Promise<any> {
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'Returns user data for the given userId.',
+    schema: {
+      example: {
+        id: 1,
+        telegramId: '1234567',
+        username: '1234567',
+        isBaned: false,
+        isVerified: true,
+        createdAt: '2024-07-31T15:19:16.000Z',
+        inviterRefCode: null,
+        refCode: '1234567'
+      },
+      properties: {
+        id: { type: 'number' },
+        telegramId: { type: 'string' },
+        username: { type: 'string' },
+        isBaned: { type: 'boolean' },
+        isVerified: { type: 'boolean' },
+        createdAt: { type: 'string', format: 'date-time' },
+        inviterRefCode: { type: 'string', nullable: true },
+        refCode: { type: 'string' }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Bad Request.' })
+  async getUserData(@Query() query): Promise<any> {
     const { userId } = query;
     try {
       return await this.userService.getUserData(userId);
@@ -53,7 +153,61 @@ export class UserController {
       throw new BadRequestException(error.message);
     }
   }
+
   @Get('')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'Returns a list of all users.',
+    schema: {
+      example: [
+        {
+          id: 1,
+          telegramId: '1234567',
+          username: '1234567',
+          isBaned: false,
+          isVerified: true,
+          createdAt: '2024-07-31T15:19:16.000Z',
+          inviterRefCode: null,
+          refCode: '1234567'
+        },
+        {
+          id: 2,
+          telegramId: '12345678',
+          username: '12345678',
+          isBaned: false,
+          isVerified: true,
+          createdAt: '2024-07-31T15:32:24.768Z',
+          inviterRefCode: '5678',
+          refCode: '12345678'
+        },
+        {
+          id: 3,
+          telegramId: '123456789',
+          username: '123456789',
+          isBaned: false,
+          isVerified: false,
+          createdAt: '2024-07-31T15:32:51.022Z',
+          inviterRefCode: '5678',
+          refCode: '123456789'
+        }
+      ],
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'number' },
+          telegramId: { type: 'string' },
+          username: { type: 'string' },
+          isBaned: { type: 'boolean' },
+          isVerified: { type: 'boolean' },
+          createdAt: { type: 'string', format: 'date-time' },
+          inviterRefCode: { type: 'string', nullable: true },
+          refCode: { type: 'string' }
+        }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Bad Request.' })
   async getAllUsers(): Promise<any> {
     try {
       return await this.userService.getAllUsers();
@@ -61,7 +215,35 @@ export class UserController {
       throw new BadRequestException(error.message);
     }
   }
+
   @Get('/by-id/:userId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'Returns the user data for the given userId.',
+    schema: {
+      example: {
+        id: 1,
+        telegramId: '1234567',
+        username: '1234567',
+        isBaned: false,
+        isVerified: true,
+        createdAt: '2024-07-31T15:19:16.000Z',
+        inviterRefCode: null,
+        refCode: '1234567'
+      },
+      properties: {
+        id: { type: 'number' },
+        telegramId: { type: 'string' },
+        username: { type: 'string' },
+        isBaned: { type: 'boolean' },
+        isVerified: { type: 'boolean' },
+        createdAt: { type: 'string', format: 'date-time' },
+        inviterRefCode: { type: 'string', nullable: true },
+        refCode: { type: 'string' }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Bad Request.' })
   async getUserById(@Param('userId') userId: string): Promise<any> {
     try {
       return await this.userService.getUserById(parseInt(userId));
@@ -69,7 +251,35 @@ export class UserController {
       throw new BadRequestException(error.message);
     }
   }
+
   @Get('/by-telegram/:telegramId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'Returns the user data for the given telegramId.',
+    schema: {
+      example: {
+        id: 1,
+        telegramId: '1234567',
+        username: '1234567',
+        isBaned: false,
+        isVerified: true,
+        createdAt: '2024-07-31T15:19:16.000Z',
+        inviterRefCode: null,
+        refCode: '1234567'
+      },
+      properties: {
+        id: { type: 'number' },
+        telegramId: { type: 'string' },
+        username: { type: 'string' },
+        isBaned: { type: 'boolean' },
+        isVerified: { type: 'boolean' },
+        createdAt: { type: 'string', format: 'date-time' },
+        inviterRefCode: { type: 'string', nullable: true },
+        refCode: { type: 'string' }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Bad Request.' })
   async getUserByTelegramId(@Param('telegramId') telegramId: string): Promise<any> {
     try {
       return await this.userService.getUserByTelegramId(telegramId);

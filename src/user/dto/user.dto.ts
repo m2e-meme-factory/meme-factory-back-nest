@@ -24,10 +24,11 @@ export class CreateUserDto {
 	@IsString()
 	@IsOptional()
 	inviterRefCode?: string
-
+	
 	@ApiProperty()
 	@IsString()
-	refCode: string
+	@IsOptional()
+	refCode?: string
 }
 
 export class VerifyUserDto {

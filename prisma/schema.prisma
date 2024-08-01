@@ -3,24 +3,23 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgres"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id         Int    @id @default(autoincrement())
-  telegramId String @unique
-  username   String
-
-  isBaned    Boolean  @default(false)
-  isVerified Boolean  @default(false)
-  createdAt  DateTime @default(now())
-
-  inviterRefCode      String?
-  refCode             String
-  tasks               Task[]
-  undelitableMessages UndelitableMessage[]
-  userInfo            UserInfo?
+  id                   Int                  @id @default(autoincrement())
+  telegramId           String               @unique
+  username             String
+  isBaned              Boolean              @default(false)
+  isVerified           Boolean              @default(false)
+  createdAt            DateTime             @default(now())
+  inviterRefCode       String?
+  refCode              String
+  tasks                Task[]
+  undelitableMessages  UndelitableMessage[]
+  userInfo             UserInfo?
+  projects             Project[]
 }
 
 model UserInfo {
@@ -32,14 +31,44 @@ model UserInfo {
   user        User   @relation(fields: [userId], references: [telegramId])
 }
 
-model Task {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  userId    String
-  data      String   @default("")
-  done      Boolean  @default(false)
-  user      User     @relation(fields: [userId], references: [telegramId])
+model Project {
+  id           Int         @id @default(autoincrement())
+  authorId     Int
+  title        String
+  description  String
+  bannerUrl    String?
+  files        Json?
+  tags         String[]
+  category     String
+  subtasks     Task[]
+  price        Float
+  author       User        @relation(fields: [authorId], references: [id])
+  tasks        ProjectTask[]
 }
+
+model Task {
+  id           Int         @id @default(autoincrement())
+  title        String
+  description  String
+  price        Float
+  projects     ProjectTask[]
+
+  User User[]
+
+  Project Project[]
+}
+
+model ProjectTask {
+  projectId    Int
+  taskId       Int
+  project      Project     @relation(fields: [projectId], references: [id])
+  task         Task        @relation(fields: [taskId], references: [id])
+
+  @@id([projectId, taskId])
+  @@map("project_task")
+}
+
+
 
 model UndelitableMessage {
   message_id String @id

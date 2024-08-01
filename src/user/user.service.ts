@@ -1,13 +1,15 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/user.dto';
+import { v4 as uuidv4 } from 'uuid';
+import { IUser } from './types/user.types';
 
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createUser(createUserDto: CreateUserDto) {
-    const { telegramId, username, isBaned, isVerified, inviterRefCode, refCode } = createUserDto;
+  async createUser(createUserDto: CreateUserDto): Promise<IUser> {
+    const { telegramId, username, isBaned, isVerified, inviterRefCode } = createUserDto;
 
     const existingUser = await this.prisma.user.findUnique({
       where: { telegramId },
@@ -16,6 +18,8 @@ export class UserService {
     if (existingUser) {
       throw new BadRequestException('User with this telegramId already exists');
     }
+
+    const refCode = uuidv4();
 
     const user = await this.prisma.user.create({
       data: {
@@ -43,7 +47,7 @@ export class UserService {
     return { isUser: user ? user.isVerified : false };
   }
 
-  async verifyUser(userId: string): Promise<any> {
+  async verifyUser(userId: string): Promise<IUser> {
     if (!userId) {
       throw new BadRequestException('user_id is required');
     }
@@ -72,21 +76,29 @@ export class UserService {
     return updatedUser;
   }
 
-  async getReferalsCount(refId: string): Promise<{ count: number }> {
-    if (!refId) {
-      throw new BadRequestException('ref_id is required');
+  async getReferalsCount(telegramId: string): Promise<{ count: number }> {
+    if (!telegramId) {
+      throw new BadRequestException('telegramId is required');
     }
-
-    // Подсчет количества пользователей с указанным refId в качестве inviterRefCode
-    const count = await this.prisma.user.count({
-      where: { inviterRefCode: refId }
+  
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId },
+      select: { refCode: true },
     });
-
+  
+    if (!user || !user.refCode) {
+      throw new BadRequestException('User with the provided telegramId does not exist or does not have a refCode');
+    }
+  
+    const count = await this.prisma.user.count({
+      where: { inviterRefCode: user.refCode }
+    });
+  
     return { count };
   }
 
   //query param
-  async getUserData(userId: string): Promise<any> {
+  async getUserData(userId: string): Promise<IUser> {
     if (!userId) {
       throw new BadRequestException('user_id is required');
     }
@@ -101,7 +113,7 @@ export class UserService {
 
     return user;
   }
-  async getAllUsers(): Promise<any> {
+  async getAllUsers(): Promise<IUser[]> {
 
     const users = await this.prisma.user.findMany();
 
@@ -109,7 +121,7 @@ export class UserService {
   }
 
   //url param
-  async getUserById(userId: number): Promise<any> {
+  async getUserById(userId: number): Promise<IUser> {
 
     const user = await this.prisma.user.findUnique({
       where: {
@@ -119,7 +131,7 @@ export class UserService {
 
     return user;
   }
-  async getUserByTelegramId(telegramId: string): Promise<any> {
+  async getUserByTelegramId(telegramId: string): Promise<IUser> {
 
     const user = await this.prisma.user.findUnique({
       where: {
