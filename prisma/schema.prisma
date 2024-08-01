@@ -37,10 +37,10 @@ model Project {
   title        String
   description  String
   bannerUrl    String?
-  files        Json?
+  files        String[]
   tags         String[]
   category     String
-  subtasks     Task[]
+  subtasks     Task[] 
   price        Float
   author       User        @relation(fields: [authorId], references: [id])
   tasks        ProjectTask[]
