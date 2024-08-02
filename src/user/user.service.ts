@@ -69,10 +69,6 @@ export class UserService {
       data: { isVerified: true }
     });
 
-    // Логика по созданию задачи и обработке веб-запросов
-    // await this.createTaskForUser(userId);
-    // await this.processWebQuery(queryId);
-
     return updatedUser;
   }
 
