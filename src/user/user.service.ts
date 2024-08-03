@@ -1,153 +1,181 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateUserDto } from './dto/user.dto';
-import { v4 as uuidv4 } from 'uuid';
-import { IUser } from './types/user.types';
+import {
+	BadRequestException,
+	Injectable,
+	NotFoundException
+} from '@nestjs/common'
+import { PrismaService } from 'src/prisma/prisma.service'
+import { CreateUserDto } from './dto/user.dto'
+import { v4 as uuidv4 } from 'uuid'
+import { IUser } from './types/user.types'
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+	constructor(private readonly prisma: PrismaService) {}
 
-  async createUser(createUserDto: CreateUserDto): Promise<IUser> {
-    const { telegramId, username, isBaned, isVerified, inviterRefCode } = createUserDto;
+	// func for test
+	async createUser(createUserDto: CreateUserDto): Promise<IUser> {
+		const { telegramId, username, isBaned, isVerified, inviterRefCode } =
+			createUserDto
 
-    const existingUser = await this.prisma.user.findUnique({
-      where: { telegramId },
-    });
+		const existingUser = await this.prisma.user.findUnique({
+			where: { telegramId }
+		})
 
-    if (existingUser) {
-      throw new BadRequestException('User with this telegramId already exists');
-    }
+		if (existingUser) {
+			throw new BadRequestException('User with this telegramId already exists')
+		}
 
-    const refCode = uuidv4();
+		const refCode = uuidv4()
 
-    const user = await this.prisma.user.create({
-      data: {
-        telegramId,
-        username,
-        isBaned: isBaned ?? false,
-        isVerified: isVerified ?? false,
-        inviterRefCode: inviterRefCode || null,
-        refCode,
-      },
-    });
+		const user = await this.prisma.user.create({
+			data: {
+				telegramId,
+				username,
+				isBaned: isBaned ?? false,
+				isVerified: isVerified ?? false,
+				inviterRefCode: inviterRefCode || null,
+				refCode
+			}
+		})
 
-    return user;
-  }
+		return user
+	}
 
-  async isUserVerified(userId: string): Promise<{ isUser: boolean }> {
-    if (!userId) {
-      throw new BadRequestException('user_id is required');
-    }
+	// real func
+	async findOrCreateUser(telegramId: number, username: string) {
+		const user = await this.prisma.user.findUnique({
+			where: {
+				telegramId: telegramId.toString()
+			}
+		})
 
-    const user = await this.prisma.user.findUnique({
-      where: { telegramId: userId }
-    });
+		if (!user) {
+			const refCode = uuidv4()
 
-    return { isUser: user ? user.isVerified : false };
-  }
+			const user = await this.prisma.user.create({
+				data: {
+					telegramId: telegramId.toString(),
+					username,
+					isBaned: false,
+					isVerified: false,
+					// inviterRefCode: inviterRefCode || null,
+					refCode
+				}
+			})
 
-  async verifyUser(userId: string): Promise<IUser> {
-    if (!userId) {
-      throw new BadRequestException('user_id is required');
-    }
+			return user
+		}
+		return user
+	}
 
-    const user = await this.prisma.user.findUnique({
-      where: { telegramId: userId }
-    });
+	async isUserVerified(userId: string): Promise<{ isUser: boolean }> {
+		if (!userId) {
+			throw new BadRequestException('user_id is required')
+		}
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+		const user = await this.prisma.user.findUnique({
+			where: { telegramId: userId }
+		})
 
-    if (user.isVerified) {
-      return user;
-    }
+		return { isUser: user ? user.isVerified : false }
+	}
 
-    const updatedUser = await this.prisma.user.update({
-      where: { telegramId: userId },
-      data: { isVerified: true }
-    });
+	async verifyUser(userId: string): Promise<IUser> {
+		if (!userId) {
+			throw new BadRequestException('user_id is required')
+		}
 
-    // Логика по созданию задачи и обработке веб-запросов
-    // await this.createTaskForUser(userId);
-    // await this.processWebQuery(queryId);
+		const user = await this.prisma.user.findUnique({
+			where: { telegramId: userId }
+		})
 
-    return updatedUser;
-  }
+		if (!user) {
+			throw new NotFoundException('User not found')
+		}
 
-  async getReferalsCount(telegramId: string): Promise<{ count: number }> {
-    if (!telegramId) {
-      throw new BadRequestException('telegramId is required');
-    }
-  
-    const user = await this.prisma.user.findUnique({
-      where: { telegramId },
-      select: { refCode: true },
-    });
-  
-    if (!user || !user.refCode) {
-      throw new BadRequestException('User with the provided telegramId does not exist or does not have a refCode');
-    }
-  
-    const count = await this.prisma.user.count({
-      where: { inviterRefCode: user.refCode }
-    });
-  
-    return { count };
-  }
+		if (user.isVerified) {
+			return user
+		}
 
-  //query param
-  async getUserData(userId: string): Promise<IUser> {
-    if (!userId) {
-      throw new BadRequestException('user_id is required');
-    }
+		const updatedUser = await this.prisma.user.update({
+			where: { telegramId: userId },
+			data: { isVerified: true }
+		})
 
-    const user = await this.prisma.user.findUnique({
-      where: { telegramId: userId }
-    });
+		return updatedUser
+	}
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+	async getReferalsCount(telegramId: string): Promise<{ count: number }> {
+		if (!telegramId) {
+			throw new BadRequestException('telegramId is required')
+		}
 
-    return user;
-  }
-  async getAllUsers(): Promise<IUser[]> {
+		const user = await this.prisma.user.findUnique({
+			where: { telegramId },
+			select: { refCode: true }
+		})
 
-    const users = await this.prisma.user.findMany();
+		if (!user || !user.refCode) {
+			throw new BadRequestException(
+				'User with the provided telegramId does not exist or does not have a refCode'
+			)
+		}
 
-    return users;
-  }
+		const count = await this.prisma.user.count({
+			where: { inviterRefCode: user.refCode }
+		})
 
-  //url param
-  async getUserById(userId: number): Promise<IUser> {
+		return { count }
+	}
 
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id: userId
-      }
-    });
+	//query param
+	async getUserData(userId: string): Promise<IUser> {
+		if (!userId) {
+			throw new BadRequestException('user_id is required')
+		}
 
-    return user;
-  }
-  async getUserByTelegramId(telegramId: string): Promise<IUser> {
+		const user = await this.prisma.user.findUnique({
+			where: { telegramId: userId }
+		})
 
-    const user = await this.prisma.user.findUnique({
-      where: {
-        telegramId: telegramId
-      }
-    });
+		if (!user) {
+			throw new NotFoundException('User not found')
+		}
 
-    return user;
-  }
+		return user
+	}
+	async getAllUsers(): Promise<IUser[]> {
+		const users = await this.prisma.user.findMany()
 
-  // Дополнительные методы для задачи и веб-запроса
-  // private async createTaskForUser(userId: string) {
-  //   // Логика по созданию задачи для пользователя
-  // }
+		return users
+	}
 
-  // private async processWebQuery(queryId: string) {
-  //   // Логика по обработке веб-запроса
-  // }
+	//url param
+	async getUserById(userId: number): Promise<IUser> {
+		const user = await this.prisma.user.findUnique({
+			where: {
+				id: userId
+			}
+		})
+
+		return user
+	}
+	async getUserByTelegramId(telegramId: string): Promise<IUser> {
+		const user = await this.prisma.user.findUnique({
+			where: {
+				telegramId: telegramId
+			}
+		})
+
+		return user
+	}
+
+	// Дополнительные методы для задачи и веб-запроса
+	// private async createTaskForUser(userId: string) {
+	//   // Логика по созданию задачи для пользователя
+	// }
+
+	// private async processWebQuery(queryId: string) {
+	//   // Логика по обработке веб-запроса
+	// }
 }
