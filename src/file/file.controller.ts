@@ -3,11 +3,12 @@ import {
 	HttpCode,
 	Post,
 	Query,
-	UploadedFile,
+	UploadedFiles,
 	UseInterceptors
 } from '@nestjs/common'
 import { FileService } from './file.service'
-import { FileInterceptor } from '@nestjs/platform-express'
+import { FilesInterceptor } from '@nestjs/platform-express'
+import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 
 @Controller('files')
 export class FileController {
@@ -15,11 +16,12 @@ export class FileController {
 
 	@Post()
 	@HttpCode(200)
-	@UseInterceptors(FileInterceptor('file'))
+	@UseInterceptors(FilesInterceptor('files'))
+	@PublicRoute()
 	async uploadFile(
-		@UploadedFile() file: Express.Multer.File,
+		@UploadedFiles() files: Express.Multer.File[],
 		@Query('folder') folder?: string
 	) {
-		return this.fileService.saveFiles([file], folder)
+		return this.fileService.saveFiles(files, folder)
 	}
 }
