@@ -160,10 +160,10 @@ export class UserService {
 
 		return user
 	}
-	async getUserByTelegramId(telegramId: string): Promise<IUser> {
+	async getUserByTelegramId(telegramId: number): Promise<IUser> {
 		const user = await this.prisma.user.findUnique({
 			where: {
-				telegramId: telegramId
+				telegramId: telegramId.toString()
 			}
 		})
 

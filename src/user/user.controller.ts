@@ -308,7 +308,8 @@ export class UserController {
 		}
 	})
 	@ApiBadRequestResponse({ description: 'Bad Request.' })
-	async getUserByTelegramId(@Param('telegramId') telegramId: string) {
+	@PublicRoute()
+	async getUserByTelegramId(@Param('telegramId') telegramId: number) {
 		try {
 			return await this.userService.getUserByTelegramId(telegramId)
 		} catch (error) {
