@@ -42,7 +42,7 @@ export class UserService {
 	}
 
 	// real func
-	async findOrCreateUser(telegramId: number, username: string) {
+	async findOrCreateUser(telegramId: number, username: string, inviterRefCode?: string) {
 		const user = await this.prisma.user.findUnique({
 			where: {
 				telegramId: telegramId.toString()
@@ -58,7 +58,7 @@ export class UserService {
 					username,
 					isBaned: false,
 					isVerified: false,
-					// inviterRefCode: inviterRefCode || null,
+					inviterRefCode: inviterRefCode || null,
 					refCode
 				}
 			})
@@ -105,7 +105,7 @@ export class UserService {
 		return updatedUser
 	}
 
-	async getReferalsCount(telegramId: string): Promise<{ count: number }> {
+	async getReferalsCount(telegramId: string): Promise<{ count: number, refLink: string }> {
 		if (!telegramId) {
 			throw new BadRequestException('telegramId is required')
 		}
@@ -124,8 +124,10 @@ export class UserService {
 		const count = await this.prisma.user.count({
 			where: { inviterRefCode: user.refCode }
 		})
+		
+		const refLink = `t.me/bot_name/?start=${user.refCode}`
 
-		return { count }
+		return { count, refLink }
 	}
 
 	//query param

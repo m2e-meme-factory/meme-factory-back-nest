@@ -8,9 +8,10 @@ import { AuthModule } from './auth/auth.module';
 import { FileService } from './file/file.service';
 import { FileController } from './file/file.controller';
 import { FileModule } from './file/file.module';
+import { TelegramModule } from './telegram/telegram.module';
 
 @Module({
-  imports: [PrismaModule, UserModule, ProjectModule, AuthModule, FileModule],
+  imports: [PrismaModule, UserModule, ProjectModule, AuthModule, FileModule, TelegramModule],
   controllers: [AppController, FileController],
   providers: [AppService, FileService],
 })

@@ -130,6 +130,7 @@ export class UserController {
 		type: 'string',
 		description: 'Telegram ID of the user to count refs for.'
 	})
+	@PublicRoute()
 	async getReferalsCount(@Query() query): Promise<{ count: number }> {
 		const { telegramId } = query
 		try {
