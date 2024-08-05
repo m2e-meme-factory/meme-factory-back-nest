@@ -7,7 +7,7 @@ import { UserService } from 'src/user/user.service';
 @Module({
   imports: [
     TelegrafModule.forRoot({
-      token: '6821067613:AAFgvaeRDSVYP2wpCsgOVXJoTTSFDj5kbDs', //env
+      token: process.env.BOT_TOKEN, //env
     }),
   ],
   providers: [TelegramUpdate, UserService],

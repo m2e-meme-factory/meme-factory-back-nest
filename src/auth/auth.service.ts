@@ -14,7 +14,7 @@ export class AuthService {
 		private jwtService: JwtService
 	) {}
 	async login(initData: string) {
-		const botToken = '6821067613:AAFgvaeRDSVYP2wpCsgOVXJoTTSFDj5kbDs' // потом заменить на env
+		const botToken = process.env.BOT_TOKEN
 
 		try {
 			validate(initData, botToken, {
