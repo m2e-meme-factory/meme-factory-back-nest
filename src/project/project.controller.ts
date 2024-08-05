@@ -1,10 +1,11 @@
 import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto';
 import { Project } from '@prisma/client';
 
 @ApiTags('projects')
+@ApiBearerAuth('access-token')
 @Controller('projects')
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}

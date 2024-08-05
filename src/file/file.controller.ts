@@ -9,8 +9,10 @@ import {
 import { FileService } from './file.service'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
+import { ApiBearerAuth } from '@nestjs/swagger'
 
 @Controller('files')
+@ApiBearerAuth('access-token')
 export class FileController {
 	constructor(private readonly fileService: FileService) {}
 

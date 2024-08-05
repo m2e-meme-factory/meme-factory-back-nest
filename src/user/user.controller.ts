@@ -15,12 +15,14 @@ import {
 	ApiCreatedResponse,
 	ApiBadRequestResponse,
 	ApiTags,
-	ApiQuery
+	ApiQuery,
+	ApiBearerAuth
 } from '@nestjs/swagger'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 
 @ApiTags('users')
 @Controller('users')
+@ApiBearerAuth('access-token')
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
