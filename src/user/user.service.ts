@@ -171,6 +171,15 @@ export class UserService {
 
 		return user
 	}
+	async getUserByRefCode(refCode: string): Promise<IUser> {
+		const user = await this.prisma.user.findFirst({
+			where: {
+				refCode: refCode
+			}
+		})
+
+		return user
+	}
 
 	// Дополнительные методы для задачи и веб-запроса
 	// private async createTaskForUser(userId: string) {
