@@ -24,7 +24,7 @@ export class ProjectService {
 			price
 		} = createProjectDto
 
-		try {
+		// try {
 			const project = await this.prisma.project.create({
 				data: {
 					authorId,
@@ -54,9 +54,9 @@ export class ProjectService {
 			}
 
 			return project
-		} catch (error) {
-			throw new InternalServerErrorException('Ошибка при создании проекта')
-		}
+		// } catch (error) {
+		//	throw new InternalServerErrorException(`${error?.name} - ${error?.meassage}`); // 'Ошибка при создании проекта')
+		// }
 	}
 
 	async getProjectById(id: number): Promise<Project | null> {
