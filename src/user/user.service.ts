@@ -1,12 +1,14 @@
 import {
 	BadRequestException,
 	Injectable,
+	InternalServerErrorException,
 	NotFoundException
 } from '@nestjs/common'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { CreateUserDto } from './dto/user.dto'
 import { v4 as uuidv4 } from 'uuid'
 import { IUser } from './types/user.types'
+import { User, UserRole } from '@prisma/client'
 
 @Injectable()
 export class UserService {
@@ -181,6 +183,20 @@ export class UserService {
 
 		return user
 	}
+
+	async updateUserRole(id: number, role: UserRole): Promise<User> {
+	
+		try {
+		  const user = await this.prisma.user.update({
+			where: { id },
+			data: { role },
+		  });
+	
+		  return user;
+		} catch (error) {
+		  throw new InternalServerErrorException(`Ошибка при обновлении роли пользователя: ${error}`);
+		}
+	  }
 
 	// Дополнительные методы для задачи и веб-запроса
 	// private async createTaskForUser(userId: string) {
