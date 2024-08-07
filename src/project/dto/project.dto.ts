@@ -1,4 +1,5 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger'
+import { ProjectStatus } from '@prisma/client'
 import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator'
 
 export class CreateTaskDto {
@@ -64,3 +65,8 @@ export class CreateProjectDto {
 }
 
 export class UpdateProjectDto extends PartialType(CreateProjectDto) {}
+
+export class UpdateProjectStatusDto {
+	@ApiProperty({ enum: ProjectStatus })
+	status: ProjectStatus;
+  }
