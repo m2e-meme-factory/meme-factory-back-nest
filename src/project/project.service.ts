@@ -1,19 +1,38 @@
 import {
 	Injectable,
 	NotFoundException,
-	InternalServerErrorException
+	InternalServerErrorException,
+	ForbiddenException
 } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
-import { Project } from '@prisma/client'
+import { Project, ProjectStatus, User } from '@prisma/client'
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto'
 
 @Injectable()
 export class ProjectService {
-	constructor(private prisma: PrismaService) {}
+	constructor(private prisma: PrismaService) { }
 
-	async createProject(createProjectDto: CreateProjectDto): Promise<Project> {
+	private checkUserRole(user: User) {
+		if (user.role !== 'creator') {
+			throw new ForbiddenException('Only users with role creator can perform this action');
+		}
+	}
+
+	private async checkProjectOwnership(projectId: number, userId: number) {
+		const project = await this.prisma.project.findUnique({
+			where: { id: projectId },
+		});
+		if (!project) {
+			throw new NotFoundException(`Project with ID ${projectId} not found`);
+		}
+		if (project.authorId !== userId) {
+			throw new ForbiddenException('You can only modify your own projects');
+		}
+	}
+
+	async createProject(createProjectDto: CreateProjectDto, user: User): Promise<Project> {
+		this.checkUserRole(user);
 		const {
-			authorId,
 			title,
 			description,
 			bannerUrl,
@@ -27,7 +46,7 @@ export class ProjectService {
 		try {
 			const project = await this.prisma.project.create({
 				data: {
-					authorId,
+					authorId: user.id,
 					title,
 					description,
 					bannerUrl,
@@ -55,7 +74,7 @@ export class ProjectService {
 
 			return project
 		} catch (error) {
-			throw new InternalServerErrorException('Ошибка при создании проекта')
+			throw new InternalServerErrorException('Ошибка при создании проекта:', error)
 		}
 	}
 
@@ -71,9 +90,9 @@ export class ProjectService {
 					}
 				}
 			})
-      if (!project) {
-        throw new NotFoundException()
-      }
+			if (!project) {
+				throw new NotFoundException()
+			}
 			return project
 		} catch (error) {
 			if (error instanceof NotFoundException) {
@@ -105,10 +124,28 @@ export class ProjectService {
 		}
 	}
 
+	async getAllProjectsByUserId(userId: number) {
+		try {
+
+			return await this.prisma.project.findMany(
+				{
+					where: { authorId: userId },
+					include: { tasks: true }
+				}
+			)
+		}
+		catch (error) {
+			throw new InternalServerErrorException('Ошибка при получении проектов пользователя', error);
+		}
+	}
+
 	async updateProject(
 		id: number,
-		updateProjectDto: UpdateProjectDto
+		updateProjectDto: UpdateProjectDto,
+		user: User
 	): Promise<Project> {
+		this.checkUserRole(user);
+		this.checkProjectOwnership(id, user.id)
 		const {
 			title,
 			description,
@@ -121,7 +158,6 @@ export class ProjectService {
 		} = updateProjectDto
 
 		try {
-			// Проверка наличия проекта
 			const projectExists = await this.prisma.project.findUnique({
 				where: { id }
 			})
@@ -129,7 +165,6 @@ export class ProjectService {
 				throw new NotFoundException(`Проект с ID ${id} не найден`)
 			}
 
-			// Обновление проекта
 			const project = await this.prisma.project.update({
 				where: { id },
 				data: {
@@ -207,10 +242,11 @@ export class ProjectService {
 			if (error instanceof NotFoundException) {
 				throw error
 			}
-			throw new InternalServerErrorException('Ошибка при обновлении проекта')
+			throw new InternalServerErrorException('Ошибка при обновлении проекта:', error)
 		}
 	}
 
+	// потом передеваль в status: closed
 	async deleteProject(id: number): Promise<Project> {
 		try {
 			const projectExists = await this.prisma.project.findUnique({
@@ -246,4 +282,20 @@ export class ProjectService {
 			throw new InternalServerErrorException('Ошибка при удалении проекта')
 		}
 	}
+
+	async updateProjectStatus(id: number, status: ProjectStatus, user: User): Promise<Project> {
+		this.checkUserRole(user);
+		await this.checkProjectOwnership(id, user.id);
+	
+		try {
+		  const project = await this.prisma.project.update({
+			where: { id },
+			data: { status },
+		  });
+	
+		  return project;
+		} catch (error) {
+		  throw new InternalServerErrorException('Ошибка при обновлении статуса проекта:', error);
+		}
+	  }
 }
