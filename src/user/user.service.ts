@@ -10,7 +10,7 @@ import { IUser } from './types/user.types'
 
 @Injectable()
 export class UserService {
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(private readonly prisma: PrismaService) { }
 
 	// func for test
 	async createUser(createUserDto: CreateUserDto): Promise<IUser> {
@@ -42,7 +42,7 @@ export class UserService {
 	}
 
 	// real func
-	async findOrCreateUser(telegramId: number, username: string, inviterRefCode?: string) {
+	async findOrCreateUser(telegramId: number, username: string, inviterRefCode?: string, role: 'creator' | 'advertiser' = 'creator') {
 		const user = await this.prisma.user.findUnique({
 			where: {
 				telegramId: telegramId.toString()
@@ -59,7 +59,8 @@ export class UserService {
 					isBaned: false,
 					isVerified: false,
 					inviterRefCode: inviterRefCode || null,
-					refCode
+					refCode,
+					role: role
 				}
 			})
 
@@ -124,7 +125,7 @@ export class UserService {
 		const count = await this.prisma.user.count({
 			where: { inviterRefCode: user.refCode }
 		})
-		
+
 		const refLink = `t.me/bot_name/?start=${user.refCode}`
 
 		return { count, refLink }

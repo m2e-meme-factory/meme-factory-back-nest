@@ -1,6 +1,8 @@
-import { NestFactory } from '@nestjs/core'
+import { NestFactory, Reflector } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import { AuthGuard } from './auth/auth.guard'
+import { JwtService } from '@nestjs/jwt'
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule)
@@ -8,6 +10,8 @@ async function bootstrap() {
 		origin: ['https://127.0.0.1:5173'],
 		methods: 'GET,HEAD,PUT,PATCH,POST,DELETE'
 	})
+	app.useGlobalGuards(new AuthGuard(app.get(Reflector), app.get(JwtService)));
+
 	const config = new DocumentBuilder()
 		.setTitle('m2e factory')
 		.setDescription('API docs for m2e factory')
