@@ -126,6 +126,7 @@ export class ProjectController {
       ],
     },
   })
+  @PublicRoute()
   async getAllProjects(): Promise<Project[]> {
     return this.projectService.getAllProjects();
   }
