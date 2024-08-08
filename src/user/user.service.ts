@@ -1,16 +1,18 @@
 import {
 	BadRequestException,
 	Injectable,
+	InternalServerErrorException,
 	NotFoundException
 } from '@nestjs/common'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { CreateUserDto } from './dto/user.dto'
 import { v4 as uuidv4 } from 'uuid'
 import { IUser } from './types/user.types'
+import { User, UserRole } from '@prisma/client'
 
 @Injectable()
 export class UserService {
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(private readonly prisma: PrismaService) { }
 
 	// func for test
 	async createUser(createUserDto: CreateUserDto): Promise<IUser> {
@@ -42,7 +44,7 @@ export class UserService {
 	}
 
 	// real func
-	async findOrCreateUser(telegramId: number, username: string, inviterRefCode?: string) {
+	async findOrCreateUser(telegramId: number, username: string, inviterRefCode?: string, role: 'creator' | 'advertiser' = 'creator') {
 		const user = await this.prisma.user.findUnique({
 			where: {
 				telegramId: telegramId.toString()
@@ -59,7 +61,8 @@ export class UserService {
 					isBaned: false,
 					isVerified: false,
 					inviterRefCode: inviterRefCode || null,
-					refCode
+					refCode,
+					role: role
 				}
 			})
 
@@ -124,7 +127,7 @@ export class UserService {
 		const count = await this.prisma.user.count({
 			where: { inviterRefCode: user.refCode }
 		})
-		
+
 		const refLink = `t.me/bot_name/?start=${user.refCode}`
 
 		return { count, refLink }
@@ -180,6 +183,20 @@ export class UserService {
 
 		return user
 	}
+
+	async updateUserRole(id: number, role: UserRole): Promise<User> {
+	
+		try {
+		  const user = await this.prisma.user.update({
+			where: { id },
+			data: { role },
+		  });
+	
+		  return user;
+		} catch (error) {
+		  throw new InternalServerErrorException(`Ошибка при обновлении роли пользователя: ${error}`);
+		}
+	  }
 
 	// Дополнительные методы для задачи и веб-запроса
 	// private async createTaskForUser(userId: string) {

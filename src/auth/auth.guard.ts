@@ -4,12 +4,14 @@ import { Reflector } from "@nestjs/core"
 import { Request } from "express"
 import { JwtService } from "@nestjs/jwt"
 import { IS_PUBLIC_ROUTE_KEY } from "./decorators/public-route.decorator"
+import { UserService } from "src/user/user.service"
 
 @Injectable()
 export class AuthGuard implements CanActivate {
     constructor(
         private reflector: Reflector,
-        private jwtService: JwtService
+        private jwtService: JwtService,
+        private userService: UserService
     ) {}
 
     async canActivate(
@@ -35,10 +37,15 @@ export class AuthGuard implements CanActivate {
             const payload = await this.jwtService.verifyAsync(
                 token,
                 {
-                    secret: process.env.JWT_SECRET // потом из env
+                    secret: process.env.JWT_SECRET
                 }
             )
-            request["user"] = payload
+            const user = await this.userService.getUserById(payload.id)
+            if (!user) {
+                throw new UnauthorizedException('User not found')
+            }
+
+            request["user"] = user
         } catch {
             throw new UnauthorizedException()
         }

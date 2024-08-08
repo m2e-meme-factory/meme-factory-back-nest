@@ -2,7 +2,7 @@
 import { Update, Ctx, Start, InjectBot } from 'nestjs-telegraf'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { UserService } from 'src/user/user.service'
-import { Context, Telegraf } from 'telegraf'
+import { Context, Markup, Telegraf } from 'telegraf'
 
 @Update()
 export class TelegramUpdate {
@@ -29,7 +29,7 @@ export class TelegramUpdate {
 					[
 						{
 							text: 'Открыть приложение',
-							web_app: { url: webAppUrl }
+							web_app: { url: webAppUrl + "/projects" }
 						}
 					]
 				]
