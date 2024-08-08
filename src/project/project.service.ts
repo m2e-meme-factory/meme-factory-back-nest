@@ -5,7 +5,7 @@ import {
 	ForbiddenException
 } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
-import { Project, ProjectStatus, User } from '@prisma/client'
+import { Project, ProjectStatus, User, UserRole } from '@prisma/client'
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto'
 
 @Injectable()
@@ -13,8 +13,8 @@ export class ProjectService {
 	constructor(private prisma: PrismaService) { }
 
 	private checkUserRole(user: User) {
-		if (user.role !== 'creator') {
-			throw new ForbiddenException('Only users with role creator can perform this action');
+		if (user.role !== UserRole.advertiser) {
+			throw new ForbiddenException('Only users with role advertiser can perform this action');
 		}
 	}
 

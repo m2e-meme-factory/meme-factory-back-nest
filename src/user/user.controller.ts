@@ -7,7 +7,8 @@ import {
 	Param,
 	HttpCode,
 	HttpStatus,
-	BadRequestException
+	BadRequestException,
+	Put
 } from '@nestjs/common'
 import { UserService } from './user.service'
 import {
@@ -16,9 +17,15 @@ import {
 	ApiBadRequestResponse,
 	ApiTags,
 	ApiQuery,
-	ApiBearerAuth
+	ApiBearerAuth,
+	ApiResponse,
+	ApiOperation,
+	ApiParam,
+	ApiBody
 } from '@nestjs/swagger'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
+import { User } from '@prisma/client'
+import { UpdateUserRoleDto } from './dto/user.dto'
 
 @ApiTags('users')
 @Controller('users')
@@ -318,5 +325,39 @@ export class UserController {
 		} catch (error) {
 			throw new BadRequestException(error.message)
 		}
+	}
+
+	@Put(':id/role')
+	@ApiOperation({ summary: 'Изменить роль пользователя' })
+	@ApiParam({ name: 'id', description: 'ID пользователя' })
+	@ApiBody({ type: UpdateUserRoleDto })
+	@ApiResponse({
+		status: 200,
+		description: 'Роль пользователя успешно обновлена.',
+		schema: {
+			example: {
+				id: 1,
+				telegramId: '1234567',
+				username: '1234567',
+				isBaned: false,
+				isVerified: true,
+				createdAt: '2024-07-31T15:19:16.000Z',
+				inviterRefCode: null,
+				refCode: '1234567'
+			}
+		}
+	})
+	@ApiResponse({ status: 400, description: 'Неверные данные запроса.' })
+	@ApiResponse({ status: 404, description: 'Пользователь не найден.' })
+	@ApiResponse({ status: 403, description: 'Доступ запрещен.' })
+	async updateUserRole(
+		@Param('id') id: string,
+		@Body() updateUserRoleDto: UpdateUserRoleDto,
+	): Promise<User> {
+		const userId = parseInt(id)
+		return this.userService.updateUserRole(
+			userId,
+			updateUserRoleDto.role,
+		)
 	}
 }

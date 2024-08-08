@@ -7,19 +7,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  creator
+  advertiser
+}
+
+enum ProjectStatus {
+  draft
+  moderation
+  published
+  not_accepted
+  closed
+}
+
 model User {
-  id                   Int                  @id @default(autoincrement())
-  telegramId           String               @unique
-  username             String
-  isBaned              Boolean              @default(false)
-  isVerified           Boolean              @default(false)
-  createdAt            DateTime             @default(now())
-  inviterRefCode       String?
-  refCode              String
-  tasks                Task[]
-  undelitableMessages  UndelitableMessage[]
-  userInfo             UserInfo?
-  projects             Project[]
+  id                  Int                  @id @default(autoincrement())
+  telegramId          String               @unique
+  username            String
+  isBaned             Boolean              @default(false)
+  isVerified          Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  inviterRefCode      String?
+  refCode             String
+  tasks               Task[]
+  undelitableMessages UndelitableMessage[]
+  userInfo            UserInfo?
+  projects            Project[]
+  role                UserRole             @default(creator)
 }
 
 model UserInfo {
@@ -32,26 +46,27 @@ model UserInfo {
 }
 
 model Project {
-  id           Int         @id @default(autoincrement())
-  authorId     Int
-  title        String
-  description  String
-  bannerUrl    String?
-  files        Json?
-  tags         String[]
-  category     String
-  subtasks     Task[]
-  price        Float
-  author       User        @relation(fields: [authorId], references: [id])
-  tasks        ProjectTask[]
+  id          Int           @id @default(autoincrement())
+  authorId    Int
+  title       String
+  description String
+  bannerUrl   String?
+  files       Json?
+  tags        String[]
+  category    String
+  subtasks    Task[]
+  price       Float
+  author      User          @relation(fields: [authorId], references: [id])
+  tasks       ProjectTask[]
+  status      ProjectStatus @default(draft)
 }
 
 model Task {
-  id           Int         @id @default(autoincrement())
-  title        String
-  description  String
-  price        Float
-  projects     ProjectTask[]
+  id          Int           @id @default(autoincrement())
+  title       String
+  description String
+  price       Float
+  projects    ProjectTask[]
 
   User User[]
 
@@ -59,16 +74,14 @@ model Task {
 }
 
 model ProjectTask {
-  projectId    Int
-  taskId       Int
-  project      Project     @relation(fields: [projectId], references: [id])
-  task         Task        @relation(fields: [taskId], references: [id])
+  projectId Int
+  taskId    Int
+  project   Project @relation(fields: [projectId], references: [id])
+  task      Task    @relation(fields: [taskId], references: [id])
 
   @@id([projectId, taskId])
   @@map("project_task")
 }
-
-
 
 model UndelitableMessage {
   message_id String @id
