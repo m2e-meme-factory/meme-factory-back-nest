@@ -18,7 +18,7 @@ export class AuthService {
 
 		try {
 			validate(initData, botToken, {
-				expiresIn: 300
+				expiresIn: 3600
 			})
 
 			const parsedData = parse(initData)
