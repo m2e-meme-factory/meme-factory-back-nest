@@ -14,7 +14,7 @@ export class FileService {
 	// 	'image/bmp',
 	// 	'image/webp',
 	// ]
-	// private maxFileSize = 25 * 1024 * 1024 // 25 MB
+	private maxFileSize = 25 * 1024 * 1024 // 25 MB
 
 	async saveFiles(
 		files: Express.Multer.File[],
@@ -31,11 +31,11 @@ export class FileService {
 				// 	)
 				// }
 
-				// if (file.size > this.maxFileSize) {
-				// 	throw new BadRequestException(
-				// 		`File is too large: ${file.originalname}. Maximum size is 25MB.`
-				// 	)
-				// }
+				if (file.size > this.maxFileSize) {
+					throw new BadRequestException(
+						`File is too large: ${file.originalname}. Maximum size is 25MB.`
+					)
+				}
 				const uniqueName = `${uuidv4()}_${file.originalname}`
 
 				await writeFile(`${uploadFolder}/${uniqueName}`, file.buffer)
