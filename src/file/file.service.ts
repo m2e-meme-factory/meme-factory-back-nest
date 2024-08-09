@@ -6,14 +6,20 @@ import { v4 as uuidv4 } from 'uuid'
 
 @Injectable()
 export class FileService {
-	// private allowedMimeTypes = [
-	// 	'image/png',
-	// 	'image/jpeg',
-	// 	'image/jpg',
-	// 	'image/gif',
-	// 	'image/bmp',
-	// 	'image/webp',
-	// ]
+	private allowedMimeTypes = [
+		'image/png',
+		'image/jpeg',
+		'image/jpg',
+		'image/gif',
+		'image/bmp',
+		'image/webp',
+        'application/pdf', // PDF
+        'application/msword', // DOC
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
+        'audio/mpeg', // MP3
+        'video/mp4', // MP4
+        'video/x-msvideo', // AVI
+	]
 	private maxFileSize = 25 * 1024 * 1024 // 25 MB
 
 	async saveFiles(
@@ -25,11 +31,11 @@ export class FileService {
 
 		const res: FileResponse[] = await Promise.all(
 			files.map(async file => {
-				// if (!this.allowedMimeTypes.includes(file.mimetype)) {
-				// 	throw new BadRequestException(
-				// 		`Invalid file type: ${file.originalname}. Only image files are allowed.`
-				// 	)
-				// }
+				if (!this.allowedMimeTypes.includes(file.mimetype)) {
+					throw new BadRequestException(
+						`Invalid file type: ${file.originalname}. Only image files, videos and docs are allowed.`
+					)
+				}
 
 				if (file.size > this.maxFileSize) {
 					throw new BadRequestException(
