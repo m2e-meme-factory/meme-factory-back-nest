@@ -88,3 +88,13 @@ model UndelitableMessage {
   userId     String
   user       User   @relation(fields: [userId], references: [telegramId])
 }
+
+model Transaction {
+  id         Int      @id @default(autoincrement())
+  projectId  Int
+  taskId     Int
+  fromUserId Int
+  toUserId   Int
+  amount     Float
+  createdAt  DateTime @default(now())
+}

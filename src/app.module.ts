@@ -9,9 +9,10 @@ import { FileService } from './file/file.service';
 import { FileController } from './file/file.controller';
 import { FileModule } from './file/file.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { TransactionModule } from './transaction/transaction.module';
 
 @Module({
-  imports: [PrismaModule, UserModule, ProjectModule, AuthModule, FileModule, TelegramModule],
+  imports: [PrismaModule, UserModule, ProjectModule, AuthModule, FileModule, TelegramModule, TransactionModule],
   controllers: [AppController, FileController],
   providers: [AppService, FileService],
 })
