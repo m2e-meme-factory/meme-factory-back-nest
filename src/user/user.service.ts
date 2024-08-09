@@ -44,7 +44,7 @@ export class UserService {
 	}
 
 	// real func
-	async findOrCreateUser(telegramId: number, username: string, inviterRefCode?: string, role: 'creator' | 'advertiser' = 'creator') {
+	async findOrCreateUser(telegramId: number, username?: string, inviterRefCode?: string, role: 'creator' | 'advertiser' = 'creator') {
 		const user = await this.prisma.user.findUnique({
 			where: {
 				telegramId: telegramId.toString()
@@ -57,7 +57,7 @@ export class UserService {
 			const user = await this.prisma.user.create({
 				data: {
 					telegramId: telegramId.toString(),
-					username,
+					username: username || undefined,
 					isBaned: false,
 					isVerified: false,
 					inviterRefCode: inviterRefCode || null,

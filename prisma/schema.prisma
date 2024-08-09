@@ -23,7 +23,7 @@ enum ProjectStatus {
 model User {
   id                  Int                  @id @default(autoincrement())
   telegramId          String               @unique
-  username            String
+  username            String?
   isBaned             Boolean              @default(false)
   isVerified          Boolean              @default(false)
   createdAt           DateTime             @default(now())
