@@ -21,10 +21,12 @@ import {
 import { ProjectService } from './project.service'
 import {
 	CreateProjectDto,
+	UpdateProjectApplicationStatusDto,
 	UpdateProjectDto,
-	UpdateProjectStatusDto
+	UpdateProjectStatusDto,
+  UpdateTaskResponseStatusDto
 } from './dto/project.dto'
-import { Project, User } from '@prisma/client'
+import { Application, Project, TaskResponse, User } from '@prisma/client'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 
 @ApiTags('projects')
@@ -313,4 +315,47 @@ export class ProjectController {
 		const projectId = parseInt(id)
 		return this.projectService.deleteProject(projectId)
 	}
+
+	@Post(':id/apply')
+	async applyToProject(@Param('id') projectId: string, @Req() req: Request) {
+		const user = req['user']
+		const parsedProjectId = parseInt(projectId)
+		return this.projectService.applyToProject(user.id, parsedProjectId)
+	}
+
+	@Post('tasks/:id/respond')
+	async respondToTask(@Param('id') taskId: string, @Req() req: Request) {
+		const user = req['user']
+		const parsedTaskId = parseInt(taskId)
+		return this.projectService.respondToTask(user.id, parsedTaskId)
+	}
+
+  @Put('application/:id/status')
+  async updateProjectApplicationStatus(
+      @Param('id') id: string,
+      @Body() updateProjectApplicationStatusDto: UpdateProjectApplicationStatusDto,
+      @Req() req: Request
+    ): Promise<Application> {
+      const projectId = parseInt(id)
+      const user: User = req['user']
+      return this.projectService.updateProjectApplicationStatus(
+        projectId,
+        updateProjectApplicationStatusDto.status,
+        user
+      )
+    }
+  @Put('tasks/response/:id/status')
+  async updateTaskResponseStatus(
+      @Param('id') id: string,
+      @Body() updateTaskResponseStatusDto: UpdateTaskResponseStatusDto,
+      @Req() req: Request
+    ): Promise<TaskResponse> {
+      const projectId = parseInt(id)
+      const user: User = req['user']
+      return this.projectService.updateTaskResponseStatus(
+        projectId,
+        updateTaskResponseStatusDto.status,
+        user
+      )
+    }
 }

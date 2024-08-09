@@ -5,7 +5,7 @@ import {
 	ForbiddenException
 } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
-import { Prisma, Project, ProjectStatus, User, UserRole } from '@prisma/client'
+import { Application, ApplicationStatus, Prisma, Project, ProjectStatus, ResponseStatus, TaskResponse, User, UserRole } from '@prisma/client'
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto'
 
 @Injectable()
@@ -342,8 +342,83 @@ export class ProjectService {
 			return project
 		} catch (error) {
 			throw new InternalServerErrorException(
-				'Ошибка при обновлении статуса проекта:',
-				error
+				`Ошибка при обновлении статуса проекта: ${error}`
+			)
+		}
+	}
+
+	async applyToProject(userId: number, projectId: number) {
+		try {
+			const application = await this.prisma.application.create({
+				data: {
+					userId,
+					projectId
+				}
+			})
+			return application
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при подаче заявки на проект: ${error}`
+			)
+		}
+	}
+
+	async respondToTask(userId: number, taskId: number) {
+		try {
+			const response = await this.prisma.taskResponse.create({
+				data: {
+					userId,
+					taskId
+				}
+			})
+			return response
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при отклике на задание: ${error}`
+			)
+		}
+	}
+
+	async updateProjectApplicationStatus(
+		id: number,
+		status: ApplicationStatus,
+		user: User
+	): Promise<Application> {
+		this.checkUserRole(user)
+		await this.checkProjectOwnership(id, user.id)
+
+		try {
+			const application = await this.prisma.application.update({
+				where: { id },
+				data: { status }
+			})
+
+			return application
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при обновлении статуса заявки на проект: ${error}`
+			)
+		}
+	}
+
+	async updateTaskResponseStatus(
+		id: number,
+		status: ResponseStatus,
+		user: User
+	): Promise<TaskResponse> {
+		this.checkUserRole(user)
+		await this.checkProjectOwnership(id, user.id)
+
+		try {
+			const response = await this.prisma.taskResponse.update({
+				where: { id },
+				data: { status }
+			})
+
+			return response
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при обновлении статуса заявки на задачу: ${error}`
 			)
 		}
 	}
