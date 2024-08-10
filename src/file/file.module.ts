@@ -8,7 +8,12 @@ import { path } from 'app-root-path';
   imports: [
     ServeStaticModule.forRoot({
       rootPath: `${path}/uploads`,
-      serveRoot: '/uploads'
+      serveRoot: '/uploads',
+      serveStaticOptions: {
+        setHeaders: (res) => {
+          res.setHeader('Content-Disposition', 'attachment');
+        },
+      },
     }),
   ],
   controllers: [FileController],
