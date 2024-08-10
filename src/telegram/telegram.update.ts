@@ -50,7 +50,7 @@ export class TelegramUpdate {
 
 	async sendFilesToUser(telegramId: string, files: string[]): Promise<void> {
 		for (const filePath of files) {
-			await this.bot.telegram.sendDocument(telegramId, { source: filePath })
+			await this.bot.telegram.sendDocument(telegramId, { source: `/uploads/projects/${filePath}` })
 		}
 	}
 }
