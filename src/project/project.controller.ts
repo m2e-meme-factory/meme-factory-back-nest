@@ -164,10 +164,10 @@ export class ProjectController {
 		example: ['tag1', 'tag2']
 	})
 	@ApiQuery({
-		name: 'categories',
+		name: 'category',
 		required: false,
-		type: [String],
-		example: ['Category Name']
+		type: String,
+		example: 'Category Name'
 	})
 	@ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
 	@ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
@@ -175,12 +175,14 @@ export class ProjectController {
 	async getAllProjects(
 		@Query('tags') tags?: string[],
 		@Query('category') category?: string,
-		@Query('page') page: number = 1,
-		@Query('limit') limit: number = 10
+		@Query('page') page: string = '1',
+		@Query('limit') limit: string = '10'
 	): Promise<{ projects: Project[]; total: number }> {
+		const parsedPage = parseInt(page)
+		const parsedLimit = parseInt(limit)
 		const tagsArray = Array.isArray(tags) ? tags : tags ? [tags] : []
 
-		return this.projectService.getAllProjects(tagsArray, category, page, limit)
+		return this.projectService.getAllProjects(tagsArray, category, parsedPage, parsedLimit)
 	}
 	@Get('by-user/:userId')
 	@ApiOperation({ summary: 'Получить все проекты пользователя по userId' })
