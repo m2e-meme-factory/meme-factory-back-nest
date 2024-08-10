@@ -5,33 +5,38 @@ import {
 	ForbiddenException
 } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
-import { Project, ProjectStatus, User, UserRole } from '@prisma/client'
+import { Application, ApplicationStatus, Prisma, Project, ProjectStatus, ResponseStatus, TaskResponse, User, UserRole } from '@prisma/client'
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto'
 
 @Injectable()
 export class ProjectService {
-	constructor(private prisma: PrismaService) { }
+	constructor(private prisma: PrismaService) {}
 
 	private checkUserRole(user: User) {
 		if (user.role !== UserRole.advertiser) {
-			throw new ForbiddenException('Only users with role advertiser can perform this action');
+			throw new ForbiddenException(
+				'Only users with role advertiser can perform this action'
+			)
 		}
 	}
 
 	private async checkProjectOwnership(projectId: number, userId: number) {
 		const project = await this.prisma.project.findUnique({
-			where: { id: projectId },
-		});
+			where: { id: projectId }
+		})
 		if (!project) {
-			throw new NotFoundException(`Project with ID ${projectId} not found`);
+			throw new NotFoundException(`Project with ID ${projectId} not found`)
 		}
 		if (project.authorId !== userId) {
-			throw new ForbiddenException('You can only modify your own projects');
+			throw new ForbiddenException('You can only modify your own projects')
 		}
 	}
 
-	async createProject(createProjectDto: CreateProjectDto, user: User): Promise<Project> {
-		this.checkUserRole(user);
+	async createProject(
+		createProjectDto: CreateProjectDto,
+		user: User
+	): Promise<Project> {
+		this.checkUserRole(user)
 		const {
 			title,
 			description,
@@ -74,7 +79,10 @@ export class ProjectService {
 
 			return project
 		} catch (error) {
-			throw new InternalServerErrorException('Ошибка при создании проекта:', error)
+			throw new InternalServerErrorException(
+				'Ошибка при создании проекта:',
+				error
+			)
 		}
 	}
 
@@ -106,36 +114,67 @@ export class ProjectService {
 		}
 	}
 
-	async getAllProjects(): Promise<Project[]> {
+	async getAllProjects(
+		tags?: string[],
+		category?: string,
+		page: number = 1,
+		limit: number = 10
+	): Promise<{ projects: Project[]; total: number }> {
 		try {
-			return await this.prisma.project.findMany({
+			const whereClause: Prisma.ProjectWhereInput = {}
+
+			if (tags && tags.length > 0) {
+				whereClause.tags = {
+					hasSome: tags
+				}
+			}
+
+			if (category) {
+				whereClause.category = category
+			}
+
+			const skip = (page - 1) * limit
+			const take = limit
+
+			const total = await this.prisma.project.count({
+				where: whereClause
+			})
+
+			const projects = await this.prisma.project.findMany({
+				where: whereClause,
 				include: {
 					tasks: {
 						include: {
 							task: true
 						}
 					}
-				}
+				},
+				skip,
+				take
 			})
+
+			return {
+				projects,
+				total
+			}
 		} catch (error) {
 			throw new InternalServerErrorException(
-				'Ошибка при получении всех проектов'
+				`Ошибка при получении всех проектов: ${error}`
 			)
 		}
 	}
 
 	async getAllProjectsByUserId(userId: number) {
 		try {
-
-			return await this.prisma.project.findMany(
-				{
-					where: { authorId: userId },
-					include: { tasks: true }
-				}
+			return await this.prisma.project.findMany({
+				where: { authorId: userId },
+				include: { tasks: true }
+			})
+		} catch (error) {
+			throw new InternalServerErrorException(
+				'Ошибка при получении проектов пользователя',
+				error
 			)
-		}
-		catch (error) {
-			throw new InternalServerErrorException('Ошибка при получении проектов пользователя', error);
 		}
 	}
 
@@ -144,7 +183,7 @@ export class ProjectService {
 		updateProjectDto: UpdateProjectDto,
 		user: User
 	): Promise<Project> {
-		this.checkUserRole(user);
+		this.checkUserRole(user)
 		this.checkProjectOwnership(id, user.id)
 		const {
 			title,
@@ -242,7 +281,10 @@ export class ProjectService {
 			if (error instanceof NotFoundException) {
 				throw error
 			}
-			throw new InternalServerErrorException('Ошибка при обновлении проекта:', error)
+			throw new InternalServerErrorException(
+				'Ошибка при обновлении проекта:',
+				error
+			)
 		}
 	}
 
@@ -283,19 +325,101 @@ export class ProjectService {
 		}
 	}
 
-	async updateProjectStatus(id: number, status: ProjectStatus, user: User): Promise<Project> {
-		this.checkUserRole(user);
-		await this.checkProjectOwnership(id, user.id);
-	
+	async updateProjectStatus(
+		id: number,
+		status: ProjectStatus,
+		user: User
+	): Promise<Project> {
+		this.checkUserRole(user)
+		await this.checkProjectOwnership(id, user.id)
+
 		try {
-		  const project = await this.prisma.project.update({
-			where: { id },
-			data: { status },
-		  });
-	
-		  return project;
+			const project = await this.prisma.project.update({
+				where: { id },
+				data: { status }
+			})
+
+			return project
 		} catch (error) {
-		  throw new InternalServerErrorException('Ошибка при обновлении статуса проекта:', error);
+			throw new InternalServerErrorException(
+				`Ошибка при обновлении статуса проекта: ${error}`
+			)
 		}
-	  }
+	}
+
+	async applyToProject(userId: number, projectId: number) {
+		try {
+			const application = await this.prisma.application.create({
+				data: {
+					userId,
+					projectId
+				}
+			})
+			return application
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при подаче заявки на проект: ${error}`
+			)
+		}
+	}
+
+	async respondToTask(userId: number, taskId: number) {
+		try {
+			const response = await this.prisma.taskResponse.create({
+				data: {
+					userId,
+					taskId
+				}
+			})
+			return response
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при отклике на задание: ${error}`
+			)
+		}
+	}
+
+	async updateProjectApplicationStatus(
+		id: number,
+		status: ApplicationStatus,
+		user: User
+	): Promise<Application> {
+		this.checkUserRole(user)
+		await this.checkProjectOwnership(id, user.id)
+
+		try {
+			const application = await this.prisma.application.update({
+				where: { id },
+				data: { status }
+			})
+
+			return application
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при обновлении статуса заявки на проект: ${error}`
+			)
+		}
+	}
+
+	async updateTaskResponseStatus(
+		id: number,
+		status: ResponseStatus,
+		user: User
+	): Promise<TaskResponse> {
+		this.checkUserRole(user)
+		await this.checkProjectOwnership(id, user.id)
+
+		try {
+			const response = await this.prisma.taskResponse.update({
+				where: { id },
+				data: { status }
+			})
+
+			return response
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при обновлении статуса заявки на задачу: ${error}`
+			)
+		}
+	}
 }
