@@ -37,11 +37,20 @@ export class TelegramUpdate {
 		})
 
 		if (inviterRefCode) {
-			const inviter = await this.userService.getUserByRefCode(inviterRefCode);
+			const inviter = await this.userService.getUserByRefCode(inviterRefCode)
 
 			if (inviter) {
-				await this.bot.telegram.sendMessage(inviter.telegramId, `Ваш реферальный код был использован!`);
+				await this.bot.telegram.sendMessage(
+					inviter.telegramId,
+					`Ваш реферальный код был использован!`
+				)
 			}
+		}
+	}
+
+	async sendFilesToUser(telegramId: string, files: string[]): Promise<void> {
+		for (const filePath of files) {
+			await this.bot.telegram.sendDocument(telegramId, { source: filePath })
 		}
 	}
 }
