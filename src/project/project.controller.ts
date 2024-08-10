@@ -7,7 +7,8 @@ import {
 	Body,
 	Param,
 	Req,
-	Query
+	Query,
+	InternalServerErrorException
 } from '@nestjs/common'
 import {
 	ApiTags,
@@ -24,7 +25,7 @@ import {
 	UpdateProjectApplicationStatusDto,
 	UpdateProjectDto,
 	UpdateProjectStatusDto,
-  UpdateTaskResponseStatusDto
+	UpdateTaskResponseStatusDto
 } from './dto/project.dto'
 import { Application, Project, TaskResponse, User } from '@prisma/client'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
@@ -330,32 +331,63 @@ export class ProjectController {
 		return this.projectService.respondToTask(user.id, parsedTaskId)
 	}
 
-  @Put('application/:id/status')
-  async updateProjectApplicationStatus(
-      @Param('id') id: string,
-      @Body() updateProjectApplicationStatusDto: UpdateProjectApplicationStatusDto,
-      @Req() req: Request
-    ): Promise<Application> {
-      const projectId = parseInt(id)
-      const user: User = req['user']
-      return this.projectService.updateProjectApplicationStatus(
-        projectId,
-        updateProjectApplicationStatusDto.status,
-        user
-      )
-    }
-  @Put('tasks/response/:id/status')
-  async updateTaskResponseStatus(
-      @Param('id') id: string,
-      @Body() updateTaskResponseStatusDto: UpdateTaskResponseStatusDto,
-      @Req() req: Request
-    ): Promise<TaskResponse> {
-      const projectId = parseInt(id)
-      const user: User = req['user']
-      return this.projectService.updateTaskResponseStatus(
-        projectId,
-        updateTaskResponseStatusDto.status,
-        user
-      )
-    }
+	@Put('application/:id/status')
+	async updateProjectApplicationStatus(
+		@Param('id') id: string,
+		@Body()
+		updateProjectApplicationStatusDto: UpdateProjectApplicationStatusDto,
+		@Req() req: Request
+	): Promise<Application> {
+		const projectId = parseInt(id)
+		const user: User = req['user']
+		return this.projectService.updateProjectApplicationStatus(
+			projectId,
+			updateProjectApplicationStatusDto.status,
+			user
+		)
+	}
+	@Put('tasks/response/:id/status')
+	async updateTaskResponseStatus(
+		@Param('id') id: string,
+		@Body() updateTaskResponseStatusDto: UpdateTaskResponseStatusDto,
+		@Req() req: Request
+	): Promise<TaskResponse> {
+		const projectId = parseInt(id)
+		const user: User = req['user']
+		return this.projectService.updateTaskResponseStatus(
+			projectId,
+			updateTaskResponseStatusDto.status,
+			user
+		)
+	}
+
+	@Get(':id/files_tg/:tg_id')
+	@ApiOperation({ summary: 'Send project files to Telegram user' })
+	@ApiParam({ name: 'id', description: 'Project ID' })
+	@ApiParam({ name: 'tg_id', description: 'Telegram user ID' })
+	@ApiResponse({
+		status: 200,
+		description: 'Files sent to Telegram successfully.'
+	})
+	@ApiResponse({ status: 404, description: 'Project or files not found.' })
+	@ApiResponse({ status: 500, description: 'Internal server error.' })
+	@PublicRoute()
+	async sendFilesToTelegram(
+		@Param('id') projectId: string,
+		@Param('tg_id') telegramId: string
+	) {
+		try {
+			const parsedProjectId = parseInt(projectId)
+			await this.projectService.sendProjectFilesToTelegram(
+				parsedProjectId,
+				telegramId
+			)
+			return { message: 'Файлы отправлены в Telegram' }
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при отправке файлов в Telegram: ${error}`,
+				error.message
+			)
+		}
+	}
 }
