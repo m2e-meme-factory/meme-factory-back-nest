@@ -5,12 +5,26 @@ import {
 	ForbiddenException
 } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
-import { Application, ApplicationStatus, Prisma, Project, ProjectStatus, ResponseStatus, TaskResponse, User, UserRole } from '@prisma/client'
+import {
+	Application,
+	ApplicationStatus,
+	Prisma,
+	Project,
+	ProjectStatus,
+	ResponseStatus,
+	TaskResponse,
+	User,
+	UserRole
+} from '@prisma/client'
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto'
+import { TelegramUpdate } from 'src/telegram/telegram.update'
 
 @Injectable()
 export class ProjectService {
-	constructor(private prisma: PrismaService) {}
+	constructor(
+		private prisma: PrismaService,
+		private telegramUpdate: TelegramUpdate
+	) {}
 
 	private checkUserRole(user: User) {
 		if (user.role !== UserRole.advertiser) {
@@ -80,8 +94,7 @@ export class ProjectService {
 			return project
 		} catch (error) {
 			throw new InternalServerErrorException(
-				'Ошибка при создании проекта:',
-				error
+				`Ошибка при создании проекта: ${error}`
 			)
 		}
 	}
@@ -108,7 +121,7 @@ export class ProjectService {
 			}
 
 			throw new InternalServerErrorException(
-				'Ошибка при получении проекта:',
+				`Ошибка при получении проекта: ${error}`,
 				error
 			)
 		}
@@ -422,4 +435,16 @@ export class ProjectService {
 			)
 		}
 	}
+
+	async sendProjectFilesToTelegram(projectId: number, telegramId: string): Promise<void> {
+		const project = await this.getProjectById(projectId);
+		if (!project || !project.files) {
+		  throw new NotFoundException('Проект или файлы для данного проекта не найдены.');
+		}
+
+		const files: string[] = Array.isArray(project.files) ? project.files as string[] : JSON.parse(project.files as any);
+
+		
+		await this.telegramUpdate.sendFilesToUser(telegramId, files);
+	  }
 }
