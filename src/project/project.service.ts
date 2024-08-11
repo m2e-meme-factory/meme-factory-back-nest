@@ -163,7 +163,10 @@ export class ProjectService {
 					}
 				},
 				skip,
-				take
+				take,
+				orderBy: {
+					id: "desc"
+				}
 			})
 
 			return {
