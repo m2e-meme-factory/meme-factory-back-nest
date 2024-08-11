@@ -445,6 +445,6 @@ export class ProjectService {
 		const files: string[] = Array.isArray(project.files) ? project.files as string[] : JSON.parse(project.files as any);
 
 		
-		await this.telegramUpdate.sendFilesToUser(telegramId, files);
+		await this.telegramUpdate.sendFilesToUser(telegramId, files, project.title);
 	  }
 }
