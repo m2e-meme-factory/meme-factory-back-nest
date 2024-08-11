@@ -127,8 +127,8 @@ export class UserService {
 		const count = await this.prisma.user.count({
 			where: { inviterRefCode: user.refCode }
 		})
-
-		const refLink = `t.me/bot_name/?start=${user.refCode}`
+		// TODO: get bot name from bot.telegram.me
+		const refLink = `https://t.me/miniapped_bot?start=${user.refCode}`
 
 		return { count, refLink }
 	}
