@@ -31,17 +31,7 @@ export class FileService {
 
 		const res: FileResponse[] = await Promise.all(
 			files.map(async file => {
-				if (!this.allowedMimeTypes.includes(file.mimetype)) {
-					throw new BadRequestException(
-						`Invalid file type: ${file.originalname}. Only image files, videos and docs are allowed.`
-					)
-				}
-
-				if (file.size > this.maxFileSize) {
-					throw new BadRequestException(
-						`File is too large: ${file.originalname}. Maximum size is 25MB.`
-					)
-				}
+				
 				const uniqueName = `${uuidv4()}_${file.originalname}`
 
 				await writeFile(`${uploadFolder}/${uniqueName}`, file.buffer)
