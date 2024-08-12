@@ -14,16 +14,19 @@ import {
 	ResponseStatus,
 	TaskResponse,
 	User,
-	UserRole
+	UserRole,
+	EventType
 } from '@prisma/client'
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto'
 import { TelegramUpdate } from 'src/telegram/telegram.update'
+import { EventService } from 'src/event/event.service'
 
 @Injectable()
 export class ProjectService {
 	constructor(
-		private prisma: PrismaService,
-		private telegramUpdate: TelegramUpdate
+		private readonly prisma: PrismaService,
+		private readonly telegramUpdate: TelegramUpdate,
+		private readonly eventService: EventService
 	) {}
 
 	private checkUserRole(user: User) {
@@ -360,14 +363,23 @@ export class ProjectService {
 		}
 	}
 
-	async applyToProject(userId: number, projectId: number) {
+	async applyToProject(user: User, projectId: number) {
 		try {
 			const application = await this.prisma.application.create({
 				data: {
-					userId,
+					userId: user.id,
 					projectId
 				}
 			})
+
+			await this.eventService.createEvent({
+				userId: user.id,
+				projectId,
+				role: user.role,
+				eventType: EventType.APPLICATION_SUBMITTED,
+				description: 'Заявка на участие в проекте подана.'
+			})
+
 			return application
 		} catch (error) {
 			throw new InternalServerErrorException(
@@ -376,18 +388,98 @@ export class ProjectService {
 		}
 	}
 
-	async respondToTask(userId: number, taskId: number) {
+	async respondToTask(user: User, taskId: number) {
 		try {
 			const response = await this.prisma.taskResponse.create({
 				data: {
-					userId,
+					userId: user.id,
 					taskId
 				}
 			})
+
+			await this.eventService.createEvent({
+				userId: user.id,
+				projectId: (
+					await this.prisma.projectTask.findFirst({ where: { taskId: taskId } })
+				).projectId,
+				role: user.role,
+				eventType: EventType.TASK_UPDATED,
+				description: 'Отклик на задание.',
+				details: { subtaskId: taskId }
+			})
+
 			return response
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при отклике на задание: ${error}`
+			)
+		}
+	}
+
+	async confirmProjectApplication(
+		user: User,
+		eventId: number,
+		isApproved: boolean
+	) {
+		try {
+			const event = await this.prisma.event.findUnique({ where: { id: eventId } })
+			const response = await this.eventService.createEvent({
+				userId: user.id,
+				projectId: event.projectId,
+				role: user.role,
+				eventType: isApproved
+					? EventType.APPLICATION_APPROVED
+					: EventType.APPLICATION_REJECTED,
+				description:
+					'Участие в проекте ' + isApproved ? 'подтверждено' : 'отклонено'
+			})
+
+			return response
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при подтверждении заявки на проект: ${error.message}`
+			)
+		}
+	}
+
+	async confirmTaskCompletion(
+		user: User,
+		creatorUserId: number,
+		taskId: number
+	) {
+		try {
+			await this.prisma.$transaction(async prisma => {
+				const transaction = await prisma.transaction.create({
+					data: {
+						amount: (
+							await this.prisma.task.findFirst({ where: { id: taskId } })
+						).price,
+						fromUserId: user.id,
+						toUserId: creatorUserId,
+						taskId: taskId,
+						projectId: (
+							await this.prisma.projectTask.findFirst({
+								where: { taskId: taskId }
+							})
+						).projectId
+					}
+				})
+
+				await this.eventService.createEvent({
+					projectId: transaction.projectId,
+					userId: transaction.fromUserId,
+					role: user.role,
+					eventType: EventType.TASK_COMPLETED,
+					description: 'Транзакция завершена.',
+					details: {
+						transactionId: transaction.id,
+						amount: transaction.amount
+					}
+				})
+			})
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при подтверждении выполнения задания: ${error.message}`
 			)
 		}
 	}
@@ -436,15 +528,21 @@ export class ProjectService {
 		}
 	}
 
-	async sendProjectFilesToTelegram(projectId: number, telegramId: string): Promise<void> {
-		const project = await this.getProjectById(projectId);
+	async sendProjectFilesToTelegram(
+		projectId: number,
+		telegramId: string
+	): Promise<void> {
+		const project = await this.getProjectById(projectId)
 		if (!project || !project.files) {
-		  throw new NotFoundException('Проект или файлы для данного проекта не найдены.');
+			throw new NotFoundException(
+				'Проект или файлы для данного проекта не найдены.'
+			)
 		}
 
-		const files: string[] = Array.isArray(project.files) ? project.files as string[] : JSON.parse(project.files as any);
+		const files: string[] = Array.isArray(project.files)
+			? (project.files as string[])
+			: JSON.parse(project.files as any)
 
-		
-		await this.telegramUpdate.sendFilesToUser(telegramId, files);
-	  }
+		await this.telegramUpdate.sendFilesToUser(telegramId, files)
+	}
 }

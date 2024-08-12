@@ -8,7 +8,9 @@ import {
 	Param,
 	Req,
 	Query,
-	InternalServerErrorException
+	InternalServerErrorException,
+	UsePipes,
+	ValidationPipe
 } from '@nestjs/common'
 import {
 	ApiTags,
@@ -29,6 +31,7 @@ import {
 } from './dto/project.dto'
 import { Application, Project, TaskResponse, User } from '@prisma/client'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
+import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
 
 @ApiTags('projects')
 @ApiBearerAuth('access-token')
@@ -80,6 +83,7 @@ export class ProjectController {
 	}
 
 	@Get(':id')
+	@UsePipes(new ValidationPipe())
 	@ApiOperation({ summary: 'Получить проект по ID' })
 	@ApiParam({ name: 'id', description: 'ID проекта' })
 	@ApiResponse({
@@ -114,9 +118,9 @@ export class ProjectController {
 		}
 	})
 	@ApiResponse({ status: 404, description: 'Проект не найден.' })
-	async getProjectById(@Param('id') id: string): Promise<Project | null> {
-		const projectId = parseInt(id)
-		return this.projectService.getProjectById(projectId)
+	@PublicRoute()
+	async getProjectById(@Param('id', IdValidationPipe) id: number): Promise<Project | null> {
+		return this.projectService.getProjectById(id)
 	}
 
 	@Get()
@@ -323,14 +327,14 @@ export class ProjectController {
 	async applyToProject(@Param('id') projectId: string, @Req() req: Request) {
 		const user = req['user']
 		const parsedProjectId = parseInt(projectId)
-		return this.projectService.applyToProject(user.id, parsedProjectId)
+		return this.projectService.applyToProject(user, parsedProjectId)
 	}
 
 	@Post('tasks/:id/respond')
 	async respondToTask(@Param('id') taskId: string, @Req() req: Request) {
 		const user = req['user']
 		const parsedTaskId = parseInt(taskId)
-		return this.projectService.respondToTask(user.id, parsedTaskId)
+		return this.projectService.respondToTask(user, parsedTaskId)
 	}
 
 	@Put('application/:id/status')
@@ -392,4 +396,31 @@ export class ProjectController {
 			)
 		}
 	}
+
+	@Post(':eventId/confirm-application')
+    @ApiOperation({ summary: 'Подтвердить или отклонить заявку на проект' })
+    @ApiParam({ name: 'projectId', description: 'ID проекта', type: 'number' })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                isApproved: {
+                    type: 'boolean',
+                    description: 'Подтверждена ли заявка',
+                },
+            },
+            required: ['isApproved'],
+        },
+    })
+    @ApiResponse({ status: 200, description: 'Заявка успешно подтверждена/отклонена' })
+    @ApiResponse({ status: 500, description: 'Ошибка при подтверждении заявки' })
+    async confirmProjectApplication(
+        @Req() req: Request,
+        @Param('eventId', IdValidationPipe) eventId: number,
+        @Body('isApproved') isApproved: boolean,
+    ): Promise<void> {
+		const user = req["user"]
+        await this.projectService.confirmProjectApplication(user, eventId, isApproved);
+    }
+
 }
