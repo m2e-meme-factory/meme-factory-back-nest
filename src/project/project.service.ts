@@ -431,7 +431,10 @@ export class ProjectService {
 					? EventType.APPLICATION_APPROVED
 					: EventType.APPLICATION_REJECTED,
 				description:
-					'Участие в проекте ' + isApproved ? 'подтверждено' : 'отклонено'
+					`Участие в проекте ${event.projectId} для пользователя ID ${event.userId} ` + isApproved ? 'подтверждено' : 'отклонено',
+				details: {
+					toUserId: event.userId
+				}
 			})
 
 			return response

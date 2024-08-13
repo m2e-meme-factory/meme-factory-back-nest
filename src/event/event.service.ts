@@ -36,9 +36,42 @@ export class EventService {
 		}
 	}
 
-	async getAllEvents() {
+	async getAllEvents(
+		userId?: number,
+		projectId?: number,
+		page: number = 1,
+		limit: number = 10
+	) {
 		try {
-			return await this.prisma.event.findMany({ include: { User: true } })
+			const skip = (page - 1) * limit
+
+			const whereCondition = {}
+
+			if (userId) {
+				whereCondition['userId'] = userId
+			}
+			if (projectId) {
+				whereCondition['projectId'] = projectId
+			}
+
+			const events = await this.prisma.event.findMany({
+				where: whereCondition,
+				include: { User: true },
+				skip: skip,
+				take: limit,
+				orderBy: { createdAt: 'asc' }
+			})
+
+			const totalEvents = await this.prisma.event.count({
+				where: whereCondition
+			})
+
+			return {
+				data: events,
+				currentPage: page,
+				totalPages: Math.ceil(totalEvents / limit),
+				totalItems: totalEvents
+			}
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при получении всех событий: ${error.message}`
