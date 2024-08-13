@@ -36,6 +36,7 @@ model User {
   role                UserRole             @default(creator)
   Application         Application[]
   TaskResponse        TaskResponse[]
+  Event               Event[]
 }
 
 model UserInfo {
@@ -62,6 +63,8 @@ model Project {
   tasks       ProjectTask[]
   status      ProjectStatus @default(draft)
   Application Application[]
+
+  Event Event[]
 }
 
 model Task {
@@ -141,4 +144,36 @@ enum ResponseStatus {
   pending
   accepted
   rejected
+}
+
+model Event {
+  id          Int       @id @default(autoincrement())
+  projectId   Int
+  userId      Int
+  role        UserRole
+  eventType   EventType
+  description String?
+  createdAt   DateTime  @default(now())
+  details     Json? // Stores transactionId, message, amount, subtaskId
+  Project     Project   @relation(fields: [projectId], references: [id])
+  User        User      @relation(fields: [userId], references: [id])
+
+  @@index([projectId])
+  @@index([userId])
+}
+
+enum EventType {
+  PROJECT_CREATED
+  PROJECT_UPDATED
+  PROJECT_DELETED
+  APPLICATION_SUBMITTED
+  APPLICATION_APPROVED
+  APPLICATION_REJECTED
+  TASK_COMPLETED
+  TASK_UPDATED
+  TRANSACTION_COMPLETED
+  DISPUTE_OPENED
+  DISPUTE_RESOLVED
+  USER_MESSAGE
+  RATING_GIVEN
 }
