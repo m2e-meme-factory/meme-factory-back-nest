@@ -119,7 +119,9 @@ export class ProjectController {
 	})
 	@ApiResponse({ status: 404, description: 'Проект не найден.' })
 	@PublicRoute()
-	async getProjectById(@Param('id', IdValidationPipe) id: number): Promise<Project | null> {
+	async getProjectById(
+		@Param('id', IdValidationPipe) id: number
+	): Promise<Project | null> {
 		return this.projectService.getProjectById(id)
 	}
 
@@ -186,51 +188,68 @@ export class ProjectController {
 		const parsedLimit = parseInt(limit)
 		const tagsArray = Array.isArray(tags) ? tags : tags ? [tags] : []
 
-		return this.projectService.getAllProjects(tagsArray, category, parsedPage, parsedLimit)
+		return this.projectService.getAllProjects(
+			tagsArray,
+			category,
+			parsedPage,
+			parsedLimit
+		)
 	}
 	@Get('by-user/:userId')
-	@ApiOperation({ summary: 'Получить все проекты пользователя по userId' })
+	@ApiOperation({
+		summary: 'Получить все проекты пользователя по userId с пагинацией'
+	})
 	@ApiParam({ name: 'userId', description: 'ID пользователя' })
+	@ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+	@ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
 	@ApiResponse({
 		status: 200,
-		description: 'Список проектов пользователя.',
+		description: 'Список проектов пользователя с пагинацией.',
 		schema: {
-			example: [
-				{
-					id: 1,
-					authorId: 1,
-					title: 'Example Project',
-					description: 'Description of the example project',
-					bannerUrl: 'http://example.com/banner.png',
-					files: ['file1.png', 'file2.png'],
-					tags: ['tag1', 'tag2'],
-					category: 'Category Name',
-					price: 1000,
-					tasks: [
-						{
-							id: 1,
-							title: 'Task 1',
-							description: 'Description of task 1',
-							price: 500
-						},
-						{
-							id: 2,
-							title: 'Task 2',
-							description: 'Description of task 2',
-							price: 500
-						}
-					]
-				}
-			]
+			example: {
+				projects: [
+					{
+						id: 1,
+						authorId: 1,
+						title: 'Example Project',
+						description: 'Description of the example project',
+						bannerUrl: 'http://example.com/banner.png',
+						files: ['file1.png', 'file2.png'],
+						tags: ['tag1', 'tag2'],
+						category: 'Category Name',
+						price: 1000,
+						tasks: [
+							{
+								id: 1,
+								title: 'Task 1',
+								description: 'Description of task 1',
+								price: 500
+							},
+							{
+								id: 2,
+								title: 'Task 2',
+								description: 'Description of task 2',
+								price: 500
+							}
+						]
+					}
+				],
+				total: 1
+			}
 		}
 	})
 	@ApiResponse({ status: 404, description: 'Проекты не найдены.' })
 	@PublicRoute()
 	async getAllProjectsByUserId(
-		@Param('userId') userId: string
-	): Promise<Project[]> {
-		const userIntId = parseInt(userId, 10)
-		return this.projectService.getAllProjectsByUserId(userIntId)
+		@Param('userId', IdValidationPipe) userId: number,
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 10
+	): Promise<{ projects: Project[]; total: number }> {
+		return this.projectService.getAllProjectsByUserId(
+			userId,
+			Number(page),
+			Number(limit)
+		)
 	}
 
 	@Put(':id')
@@ -398,29 +417,35 @@ export class ProjectController {
 	}
 
 	@Post(':eventId/confirm-application')
-    @ApiOperation({ summary: 'Подтвердить или отклонить заявку на проект' })
-    @ApiParam({ name: 'projectId', description: 'ID проекта', type: 'number' })
-    @ApiBody({
-        schema: {
-            type: 'object',
-            properties: {
-                isApproved: {
-                    type: 'boolean',
-                    description: 'Подтверждена ли заявка',
-                },
-            },
-            required: ['isApproved'],
-        },
-    })
-    @ApiResponse({ status: 200, description: 'Заявка успешно подтверждена/отклонена' })
-    @ApiResponse({ status: 500, description: 'Ошибка при подтверждении заявки' })
-    async confirmProjectApplication(
-        @Req() req: Request,
-        @Param('eventId', IdValidationPipe) eventId: number,
-        @Body('isApproved') isApproved: boolean,
-    ): Promise<void> {
-		const user = req["user"]
-        await this.projectService.confirmProjectApplication(user, eventId, isApproved);
-    }
-
+	@ApiOperation({ summary: 'Подтвердить или отклонить заявку на проект' })
+	@ApiParam({ name: 'projectId', description: 'ID проекта', type: 'number' })
+	@ApiBody({
+		schema: {
+			type: 'object',
+			properties: {
+				isApproved: {
+					type: 'boolean',
+					description: 'Подтверждена ли заявка'
+				}
+			},
+			required: ['isApproved']
+		}
+	})
+	@ApiResponse({
+		status: 200,
+		description: 'Заявка успешно подтверждена/отклонена'
+	})
+	@ApiResponse({ status: 500, description: 'Ошибка при подтверждении заявки' })
+	async confirmProjectApplication(
+		@Req() req: Request,
+		@Param('eventId', IdValidationPipe) eventId: number,
+		@Body('isApproved') isApproved: boolean
+	): Promise<void> {
+		const user = req['user']
+		await this.projectService.confirmProjectApplication(
+			user,
+			eventId,
+			isApproved
+		)
+	}
 }

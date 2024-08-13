@@ -180,12 +180,25 @@ export class ProjectService {
 		}
 	}
 
-	async getAllProjectsByUserId(userId: number) {
+	async getAllProjectsByUserId(
+		userId: number,
+		page: number = 1,
+		limit: number = 10
+	) {
+		const offset = (page - 1) * limit
+
 		try {
-			return await this.prisma.project.findMany({
-				where: { authorId: userId },
-				include: { tasks: true }
-			})
+			const [projects, total] = await this.prisma.$transaction([
+				this.prisma.project.findMany({
+					where: { authorId: userId },
+					include: { tasks: true },
+					skip: offset,
+					take: limit
+				}),
+				this.prisma.project.count({ where: { authorId: userId } })
+			])
+
+			return { projects, total }
 		} catch (error) {
 			throw new InternalServerErrorException(
 				'Ошибка при получении проектов пользователя',
@@ -422,7 +435,9 @@ export class ProjectService {
 		isApproved: boolean
 	) {
 		try {
-			const event = await this.prisma.event.findUnique({ where: { id: eventId } })
+			const event = await this.prisma.event.findUnique({
+				where: { id: eventId }
+			})
 			const response = await this.eventService.createEvent({
 				userId: user.id,
 				projectId: event.projectId,
@@ -431,7 +446,10 @@ export class ProjectService {
 					? EventType.APPLICATION_APPROVED
 					: EventType.APPLICATION_REJECTED,
 				description:
-					`Участие в проекте ${event.projectId} для пользователя ID ${event.userId} ` + isApproved ? 'подтверждено' : 'отклонено',
+					`Участие в проекте ${event.projectId} для пользователя ID ${event.userId} ` +
+					isApproved
+						? 'подтверждено'
+						: 'отклонено',
 				details: {
 					toUserId: event.userId
 				}
