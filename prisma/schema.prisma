@@ -34,9 +34,9 @@ model User {
   userInfo            UserInfo?
   projects            Project[]
   role                UserRole             @default(creator)
-  Application         Application[]
-  TaskResponse        TaskResponse[]
   Event               Event[]
+
+  ProgressProject ProgressProject[]
 }
 
 model UserInfo {
@@ -62,9 +62,10 @@ model Project {
   author      User          @relation(fields: [authorId], references: [id])
   tasks       ProjectTask[]
   status      ProjectStatus @default(draft)
-  Application Application[]
 
   Event Event[]
+
+  ProgressProject ProgressProject[]
 }
 
 model Task {
@@ -76,8 +77,7 @@ model Task {
 
   User User[]
 
-  Project      Project[]
-  TaskResponse TaskResponse[]
+  Project Project[]
 }
 
 model ProjectTask {
@@ -106,57 +106,43 @@ model Transaction {
   createdAt  DateTime @default(now())
 }
 
-model Application {
-  id        Int               @id @default(autoincrement())
+model ProgressProject {
+  id        Int            @id @default(autoincrement())
   userId    Int
   projectId Int
-  status    ApplicationStatus @default(pending)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  status    ProgressStatus @default(pending)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 
   user    User    @relation(fields: [userId], references: [id])
   project Project @relation(fields: [projectId], references: [id])
 
+  Event Event[]
+
   @@unique([userId, projectId])
 }
 
-enum ApplicationStatus {
-  pending
-  accepted
-  rejected
-}
-
-model TaskResponse {
-  id        Int            @id @default(autoincrement())
-  userId    Int
-  taskId    Int
-  status    ResponseStatus @default(pending)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-
-  user User @relation(fields: [userId], references: [id])
-  task Task @relation(fields: [taskId], references: [id])
-
-  @@unique([userId, taskId])
-}
-
-enum ResponseStatus {
+enum ProgressStatus {
   pending
   accepted
   rejected
 }
 
 model Event {
-  id          Int       @id @default(autoincrement())
-  projectId   Int
-  userId      Int
-  role        UserRole
-  eventType   EventType
-  description String?
-  createdAt   DateTime  @default(now())
-  details     Json? // Stores transactionId, message, amount, subtaskId
-  Project     Project   @relation(fields: [projectId], references: [id])
-  User        User      @relation(fields: [userId], references: [id])
+  id                Int  @id @default(autoincrement())
+  projectId         Int
+  progressProjectId Int?
+
+  userId    Int
+  role      UserRole
+  eventType EventType
+
+  description     String?
+  createdAt       DateTime         @default(now())
+  details         Json? // Stores transactionId, message, amount, subtaskId
+  Project         Project          @relation(fields: [projectId], references: [id])
+  User            User             @relation(fields: [userId], references: [id])
+  progressProject ProgressProject? @relation(fields: [progressProjectId], references: [id])
 
   @@index([projectId])
   @@index([userId])

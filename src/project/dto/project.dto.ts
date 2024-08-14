@@ -1,8 +1,6 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger'
 import {
-	ApplicationStatus,
 	ProjectStatus,
-	ResponseStatus
 } from '@prisma/client'
 import {
 	IsArray,
@@ -81,15 +79,15 @@ export class UpdateProjectStatusDto {
 	@ApiProperty({ enum: ProjectStatus })
 	status: ProjectStatus
 }
-export class UpdateProjectApplicationStatusDto {
-	@ApiProperty({ enum: ApplicationStatus })
-	status: ApplicationStatus
-}
+// export class UpdateProjectApplicationStatusDto {
+// 	@ApiProperty({ enum: ApplicationStatus })
+// 	status: ApplicationStatus
+// }
 
-export class UpdateTaskResponseStatusDto {
-	@ApiProperty({ enum: ResponseStatus })
-	status: ResponseStatus
-}
+// export class UpdateTaskResponseStatusDto {
+// 	@ApiProperty({ enum: ResponseStatus })
+// 	status: ResponseStatus
+// }
 
 export class ApplyProjectDto {
 	@IsInt()

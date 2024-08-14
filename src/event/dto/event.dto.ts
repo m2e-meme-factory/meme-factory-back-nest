@@ -43,4 +43,7 @@ export class CreateEventDto {
 	})
 	@IsOptional()
 	details?: Record<string, any>
+
+	@IsInt()
+	progressProjectId: number
 }
