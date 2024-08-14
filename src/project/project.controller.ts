@@ -485,7 +485,17 @@ export class ProjectController {
 	}
 
 	@Get('progress/by-creator/:creatorId')
-	async getAllProjectByCreatorId(@Param('creatorId', IdValidationPipe) creatorId: number) {
+	async getAllProjectByCreatorId(
+		@Param('creatorId', IdValidationPipe) creatorId: number
+	) {
 		return this.projectProgressService.getAllProjectByCreatorId(creatorId)
+	}
+
+	@Get(':projectId/freelancers')
+	async getAllCreatorsByProjectId(
+		@Param('projectId', IdValidationPipe) projectId: number,
+		@Query('status') status: ProgressStatus
+	) {
+		return this.projectProgressService.getAllCreatorsByProjectId(projectId, status)
 	}
 }
