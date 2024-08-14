@@ -40,7 +40,6 @@ export class ProjectProgressService {
 	async applyToProject(user: User, projectId: number) {
 		this.checkUserRole(user, UserRole.creator)
 		try {
-
 			const progressProject = await this.prisma.progressProject.create({
 				data: {
 					userId: user.id,
@@ -63,34 +62,38 @@ export class ProjectProgressService {
 		}
 	}
 
-	async getAllProjectProgressByProjectId(user: User, projectId: number) {
+	async getAllProjectProgressByProjectId(
+		user: User,
+		projectId: number,
+		creatorId?: number
+	) {
 		return await this.prisma.progressProject.findMany({
-			where: { projectId },
+			where: { projectId, ...creatorId && { userId: creatorId } },
 			include: { Event: true }
 		})
 	}
 
-    async getAllProjectByCreatorId(creatorId: number) {
-        return await this.prisma.progressProject.findMany({
-            where: {
-                userId: creatorId
-            },
-            include: {
-                project: true
-            }
-        })
-    }
-    async getAllCreatorsByProjectId(projectId: number, status: ProgressStatus) {
-        return await this.prisma.progressProject.findMany({
-            where: {
-                projectId,
-                status
-            },
-            include: {
-                user: true
-            }
-        })
-    }
+	async getAllProjectByCreatorId(creatorId: number) {
+		return await this.prisma.progressProject.findMany({
+			where: {
+				userId: creatorId
+			},
+			include: {
+				project: true
+			}
+		})
+	}
+	async getAllCreatorsByProjectId(projectId: number, status: ProgressStatus) {
+		return await this.prisma.progressProject.findMany({
+			where: {
+				projectId,
+				status
+			},
+			include: {
+				user: true
+			}
+		})
+	}
 
 	async getProjectProgressEvents(progressProjectId: number) {
 		try {

@@ -417,12 +417,14 @@ export class ProjectController {
 	@Get('progress/by-project/:projectId')
 	async getAllProjectProgressByProjectId(
 		@Param('projectId', IdValidationPipe) projectId: number,
+		@Query('creatorId') creatorId: string,
 		@Req() req: Request
 	) {
 		const user = req['user']
 		return this.projectProgressService.getAllProjectProgressByProjectId(
 			user,
-			projectId
+			projectId,
+			Number(creatorId)
 		)
 	}
 
