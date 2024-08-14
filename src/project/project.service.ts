@@ -2,20 +2,15 @@ import {
 	Injectable,
 	NotFoundException,
 	InternalServerErrorException,
-	ForbiddenException
+	ForbiddenException,
 } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import {
-	Application,
-	ApplicationStatus,
 	Prisma,
 	Project,
 	ProjectStatus,
-	ResponseStatus,
-	TaskResponse,
 	User,
-	UserRole,
-	EventType
+	UserRole
 } from '@prisma/client'
 import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto'
 import { TelegramUpdate } from 'src/telegram/telegram.update'
@@ -376,178 +371,124 @@ export class ProjectService {
 		}
 	}
 
-	async applyToProject(user: User, projectId: number) {
-		try {
-			const application = await this.prisma.application.create({
-				data: {
-					userId: user.id,
-					projectId
-				}
-			})
+	
 
-			await this.eventService.createEvent({
-				userId: user.id,
-				projectId,
-				role: user.role,
-				eventType: EventType.APPLICATION_SUBMITTED,
-				description: 'Заявка на участие в проекте подана.'
-			})
 
-			return application
-		} catch (error) {
-			throw new InternalServerErrorException(
-				`Ошибка при подаче заявки на проект: ${error}`
-			)
-		}
-	}
 
-	async respondToTask(user: User, taskId: number) {
-		try {
-			const response = await this.prisma.taskResponse.create({
-				data: {
-					userId: user.id,
-					taskId
-				}
-			})
+	// async respondToTask(user: User, taskId: number) {
+	// 	try {
+	// 		const response = await this.prisma.taskResponse.create({
+	// 			data: {
+	// 				userId: user.id,
+	// 				taskId
+	// 			}
+	// 		})
 
-			await this.eventService.createEvent({
-				userId: user.id,
-				projectId: (
-					await this.prisma.projectTask.findFirst({ where: { taskId: taskId } })
-				).projectId,
-				role: user.role,
-				eventType: EventType.TASK_UPDATED,
-				description: 'Отклик на задание.',
-				details: { subtaskId: taskId }
-			})
+	// 		await this.eventService.createEvent({
+	// 			userId: user.id,
+	// 			projectId: (
+	// 				await this.prisma.projectTask.findFirst({ where: { taskId: taskId } })
+	// 			).projectId,
+	// 			role: user.role,
+	// 			eventType: EventType.TASK_UPDATED,
+	// 			description: 'Отклик на задание.',
+	// 			details: { subtaskId: taskId }
+	// 		})
 
-			return response
-		} catch (error) {
-			throw new InternalServerErrorException(
-				`Ошибка при отклике на задание: ${error}`
-			)
-		}
-	}
+	// 		return response
+	// 	} catch (error) {
+	// 		throw new InternalServerErrorException(
+	// 			`Ошибка при отклике на задание: ${error}`
+	// 		)
+	// 	}
+	// }
 
-	async confirmProjectApplication(
-		user: User,
-		eventId: number,
-		isApproved: boolean
-	) {
-		try {
-			const event = await this.prisma.event.findUnique({
-				where: { id: eventId }
-			})
-			const response = await this.eventService.createEvent({
-				userId: user.id,
-				projectId: event.projectId,
-				role: user.role,
-				eventType: isApproved
-					? EventType.APPLICATION_APPROVED
-					: EventType.APPLICATION_REJECTED,
-				description:
-					`Участие в проекте ${event.projectId} для пользователя ID ${event.userId} ` +
-					isApproved
-						? 'подтверждено'
-						: 'отклонено',
-				details: {
-					toUserId: event.userId
-				}
-			})
 
-			return response
-		} catch (error) {
-			throw new InternalServerErrorException(
-				`Ошибка при подтверждении заявки на проект: ${error.message}`
-			)
-		}
-	}
+	// async confirmTaskCompletion(
+	// 	user: User,
+	// 	creatorUserId: number,
+	// 	taskId: number
+	// ) {
+	// 	try {
+	// 		await this.prisma.$transaction(async prisma => {
+	// 			const transaction = await prisma.transaction.create({
+	// 				data: {
+	// 					amount: (
+	// 						await this.prisma.task.findFirst({ where: { id: taskId } })
+	// 					).price,
+	// 					fromUserId: user.id,
+	// 					toUserId: creatorUserId,
+	// 					taskId: taskId,
+	// 					projectId: (
+	// 						await this.prisma.projectTask.findFirst({
+	// 							where: { taskId: taskId }
+	// 						})
+	// 					).projectId
+	// 				}
+	// 			})
 
-	async confirmTaskCompletion(
-		user: User,
-		creatorUserId: number,
-		taskId: number
-	) {
-		try {
-			await this.prisma.$transaction(async prisma => {
-				const transaction = await prisma.transaction.create({
-					data: {
-						amount: (
-							await this.prisma.task.findFirst({ where: { id: taskId } })
-						).price,
-						fromUserId: user.id,
-						toUserId: creatorUserId,
-						taskId: taskId,
-						projectId: (
-							await this.prisma.projectTask.findFirst({
-								where: { taskId: taskId }
-							})
-						).projectId
-					}
-				})
+	// 			await this.eventService.createEvent({
+	// 				projectId: transaction.projectId,
+	// 				userId: transaction.fromUserId,
+	// 				role: user.role,
+	// 				eventType: EventType.TASK_COMPLETED,
+	// 				description: 'Транзакция завершена.',
+	// 				details: {
+	// 					transactionId: transaction.id,
+	// 					amount: transaction.amount
+	// 				}
+	// 			})
+	// 		})
+	// 	} catch (error) {
+	// 		throw new InternalServerErrorException(
+	// 			`Ошибка при подтверждении выполнения задания: ${error.message}`
+	// 		)
+	// 	}
+	// }
 
-				await this.eventService.createEvent({
-					projectId: transaction.projectId,
-					userId: transaction.fromUserId,
-					role: user.role,
-					eventType: EventType.TASK_COMPLETED,
-					description: 'Транзакция завершена.',
-					details: {
-						transactionId: transaction.id,
-						amount: transaction.amount
-					}
-				})
-			})
-		} catch (error) {
-			throw new InternalServerErrorException(
-				`Ошибка при подтверждении выполнения задания: ${error.message}`
-			)
-		}
-	}
+	// async updateProjectApplicationStatus(
+	// 	id: number,
+	// 	status: ApplicationStatus,
+	// 	user: User
+	// ): Promise<Application> {
+	// 	this.checkUserRole(user)
+	// 	await this.checkProjectOwnership(id, user.id)
 
-	async updateProjectApplicationStatus(
-		id: number,
-		status: ApplicationStatus,
-		user: User
-	): Promise<Application> {
-		this.checkUserRole(user)
-		await this.checkProjectOwnership(id, user.id)
+	// 	try {
+	// 		const application = await this.prisma.application.update({
+	// 			where: { id },
+	// 			data: { status }
+	// 		})
 
-		try {
-			const application = await this.prisma.application.update({
-				where: { id },
-				data: { status }
-			})
+	// 		return application
+	// 	} catch (error) {
+	// 		throw new InternalServerErrorException(
+	// 			`Ошибка при обновлении статуса заявки на проект: ${error}`
+	// 		)
+	// 	}
+	// }
 
-			return application
-		} catch (error) {
-			throw new InternalServerErrorException(
-				`Ошибка при обновлении статуса заявки на проект: ${error}`
-			)
-		}
-	}
+	// async updateTaskResponseStatus(
+	// 	id: number,
+	// 	status: ResponseStatus,
+	// 	user: User
+	// ): Promise<TaskResponse> {
+	// 	this.checkUserRole(user)
+	// 	await this.checkProjectOwnership(id, user.id)
 
-	async updateTaskResponseStatus(
-		id: number,
-		status: ResponseStatus,
-		user: User
-	): Promise<TaskResponse> {
-		this.checkUserRole(user)
-		await this.checkProjectOwnership(id, user.id)
+	// 	try {
+	// 		const response = await this.prisma.taskResponse.update({
+	// 			where: { id },
+	// 			data: { status }
+	// 		})
 
-		try {
-			const response = await this.prisma.taskResponse.update({
-				where: { id },
-				data: { status }
-			})
-
-			return response
-		} catch (error) {
-			throw new InternalServerErrorException(
-				`Ошибка при обновлении статуса заявки на задачу: ${error}`
-			)
-		}
-	}
+	// 		return response
+	// 	} catch (error) {
+	// 		throw new InternalServerErrorException(
+	// 			`Ошибка при обновлении статуса заявки на задачу: ${error}`
+	// 		)
+	// 	}
+	// }
 
 	async sendProjectFilesToTelegram(
 		projectId: number,

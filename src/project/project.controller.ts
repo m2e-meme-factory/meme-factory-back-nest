@@ -24,20 +24,22 @@ import {
 import { ProjectService } from './project.service'
 import {
 	CreateProjectDto,
-	UpdateProjectApplicationStatusDto,
 	UpdateProjectDto,
-	UpdateProjectStatusDto,
-	UpdateTaskResponseStatusDto
+	UpdateProjectStatusDto
 } from './dto/project.dto'
-import { Application, Project, TaskResponse, User } from '@prisma/client'
+import { ProgressStatus, Project, User } from '@prisma/client'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
+import { ProjectProgressService } from './project-progress.service'
 
 @ApiTags('projects')
 @ApiBearerAuth('access-token')
 @Controller('projects')
 export class ProjectController {
-	constructor(private readonly projectService: ProjectService) {}
+	constructor(
+		private readonly projectService: ProjectService,
+		private readonly projectProgressService: ProjectProgressService
+	) {}
 
 	@Post()
 	@ApiOperation({ summary: 'Создать проект' })
@@ -342,50 +344,6 @@ export class ProjectController {
 		return this.projectService.deleteProject(projectId)
 	}
 
-	@Post(':id/apply')
-	async applyToProject(@Param('id') projectId: string, @Req() req: Request) {
-		const user = req['user']
-		const parsedProjectId = parseInt(projectId)
-		return this.projectService.applyToProject(user, parsedProjectId)
-	}
-
-	@Post('tasks/:id/respond')
-	async respondToTask(@Param('id') taskId: string, @Req() req: Request) {
-		const user = req['user']
-		const parsedTaskId = parseInt(taskId)
-		return this.projectService.respondToTask(user, parsedTaskId)
-	}
-
-	@Put('application/:id/status')
-	async updateProjectApplicationStatus(
-		@Param('id') id: string,
-		@Body()
-		updateProjectApplicationStatusDto: UpdateProjectApplicationStatusDto,
-		@Req() req: Request
-	): Promise<Application> {
-		const projectId = parseInt(id)
-		const user: User = req['user']
-		return this.projectService.updateProjectApplicationStatus(
-			projectId,
-			updateProjectApplicationStatusDto.status,
-			user
-		)
-	}
-	@Put('tasks/response/:id/status')
-	async updateTaskResponseStatus(
-		@Param('id') id: string,
-		@Body() updateTaskResponseStatusDto: UpdateTaskResponseStatusDto,
-		@Req() req: Request
-	): Promise<TaskResponse> {
-		const projectId = parseInt(id)
-		const user: User = req['user']
-		return this.projectService.updateTaskResponseStatus(
-			projectId,
-			updateTaskResponseStatusDto.status,
-			user
-		)
-	}
-
 	@Get(':id/files_tg/:tg_id')
 	@ApiOperation({ summary: 'Send project files to Telegram user' })
 	@ApiParam({ name: 'id', description: 'Project ID' })
@@ -416,36 +374,113 @@ export class ProjectController {
 		}
 	}
 
-	@Post(':eventId/confirm-application')
-	@ApiOperation({ summary: 'Подтвердить или отклонить заявку на проект' })
-	@ApiParam({ name: 'projectId', description: 'ID проекта', type: 'number' })
-	@ApiBody({
-		schema: {
-			type: 'object',
-			properties: {
-				isApproved: {
-					type: 'boolean',
-					description: 'Подтверждена ли заявка'
-				}
-			},
-			required: ['isApproved']
-		}
+	// @Post(':eventId/confirm-application')
+	// @ApiOperation({ summary: 'Подтвердить или отклонить заявку на проект' })
+	// @ApiParam({ name: 'projectId', description: 'ID проекта', type: 'number' })
+	// @ApiBody({
+	// 	schema: {
+	// 		type: 'object',
+	// 		properties: {
+	// 			isApproved: {
+	// 				type: 'boolean',
+	// 				description: 'Подтверждена ли заявка'
+	// 			}
+	// 		},
+	// 		required: ['isApproved']
+	// 	}
+	// })
+	// @ApiResponse({
+	// 	status: 200,
+	// 	description: 'Заявка успешно подтверждена/отклонена'
+	// })
+	// @ApiResponse({ status: 500, description: 'Ошибка при подтверждении заявки' })
+	// async confirmProjectApplication(
+	// 	@Req() req: Request,
+	// 	@Param('eventId', IdValidationPipe) eventId: number,
+	// 	@Body('isApproved') isApproved: boolean
+	// ): Promise<void> {
+	// 	const user = req['user']
+	// 	await this.projectService.confirmProjectApplication(
+	// 		user,
+	// 		eventId,
+	// 		isApproved
+	// 	)
+	// }
+
+	@ApiOperation({ summary: 'Получить прогресс проекта по ID проекта' })
+	@ApiParam({ name: 'projectId', type: 'number', description: 'ID проекта' })
+	@ApiResponse({
+		status: 200,
+		description: 'Успешное получение прогресса проекта'
+	})
+	@ApiResponse({ status: 401, description: 'Неавторизован' })
+	@Get('progress/by-project/:projectId')
+	async getAllProjectProgressByProjectId(
+		@Param('projectId', IdValidationPipe) projectId: number,
+		@Req() req: Request
+	) {
+		const user = req['user']
+		return this.projectProgressService.getAllProjectProgressByProjectId(
+			user,
+			projectId
+		)
+	}
+
+	@ApiOperation({ summary: 'Подать заявку на участие в проекте' })
+	@ApiParam({ name: 'id', type: 'string', description: 'ID проекта' })
+	@ApiResponse({ status: 201, description: 'Заявка подана успешно' })
+	@ApiResponse({ status: 401, description: 'Неавторизован' })
+	@Post(':id/apply')
+	async applyToProject(@Param('id') projectId: string, @Req() req: Request) {
+		const user = req['user']
+		return this.projectProgressService.applyToProject(user, Number(projectId))
+	}
+
+	@ApiOperation({ summary: 'Получить события прогресса проекта по ID' })
+	@ApiParam({
+		name: 'progressProjectId',
+		type: 'string',
+		description: 'ID прогресса проекта'
 	})
 	@ApiResponse({
 		status: 200,
-		description: 'Заявка успешно подтверждена/отклонена'
+		description: 'События прогресса проекта успешно получены'
 	})
-	@ApiResponse({ status: 500, description: 'Ошибка при подтверждении заявки' })
-	async confirmProjectApplication(
-		@Req() req: Request,
-		@Param('eventId', IdValidationPipe) eventId: number,
-		@Body('isApproved') isApproved: boolean
-	): Promise<void> {
+	@ApiResponse({ status: 404, description: 'Прогресс проекта не найден' })
+	@Get('/progress/:progressProjectId/events')
+	async getProjectProgressEvents(
+		@Param('progressProjectId') progressProjectId: string
+	) {
+		return this.projectProgressService.getProjectProgressEvents(
+			Number(progressProjectId)
+		)
+	}
+
+	@ApiOperation({ summary: 'Принять заявку на участие в проекте' })
+	@ApiParam({ name: 'id', type: 'number', description: 'ID прогресса проекта' })
+	@ApiResponse({ status: 200, description: 'Заявка принята успешно' })
+	@ApiResponse({ status: 401, description: 'Неавторизован' })
+	@Post('progress/:id/accept')
+	async acceptApplication(@Param('id') id: number, @Req() req: Request) {
 		const user = req['user']
-		await this.projectService.confirmProjectApplication(
+		return this.projectProgressService.updateApplicationStatus(
 			user,
-			eventId,
-			isApproved
+			Number(id),
+			ProgressStatus.accepted
+		)
+	}
+
+	@ApiOperation({ summary: 'Отклонить заявку на участие в проекте' })
+	@ApiParam({ name: 'id', type: 'number', description: 'ID прогресса проекта' })
+	@ApiResponse({ status: 200, description: 'Заявка отклонена успешно' })
+	@ApiResponse({ status: 401, description: 'Неавторизован' })
+	@Post('progress/:id/reject')
+	async rejectApplication(@Param('id') id: number, @Req() req: Request) {
+		const user = req['user']
+		return this.projectProgressService.updateApplicationStatus(
+			user,
+			Number(id),
+			ProgressStatus.rejected
 		)
 	}
 }

@@ -5,10 +5,11 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { TelegramUpdate } from 'src/telegram/telegram.update';
 import { UserService } from 'src/user/user.service';
 import { EventService } from 'src/event/event.service';
+import { ProjectProgressService } from './project-progress.service';
 
 @Module({
   imports: [PrismaModule],
-  providers: [ProjectService, TelegramUpdate, UserService, EventService],
+  providers: [ProjectService, TelegramUpdate, UserService, EventService, ProjectProgressService],
   controllers: [ProjectController]
 })
 export class ProjectModule {}
