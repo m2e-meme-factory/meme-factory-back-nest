@@ -417,12 +417,14 @@ export class ProjectController {
 	@Get('progress/by-project/:projectId')
 	async getAllProjectProgressByProjectId(
 		@Param('projectId', IdValidationPipe) projectId: number,
+		@Query('creatorId') creatorId: string,
 		@Req() req: Request
 	) {
 		const user = req['user']
 		return this.projectProgressService.getAllProjectProgressByProjectId(
 			user,
-			projectId
+			projectId,
+			Number(creatorId)
 		)
 	}
 
@@ -463,7 +465,7 @@ export class ProjectController {
 	@Post('progress/:id/accept')
 	async acceptApplication(@Param('id') id: number, @Req() req: Request) {
 		const user = req['user']
-		return this.projectProgressService.updateApplicationStatus(
+		return this.projectProgressService.updateProjectProgressStatus(
 			user,
 			Number(id),
 			ProgressStatus.accepted
@@ -477,10 +479,25 @@ export class ProjectController {
 	@Post('progress/:id/reject')
 	async rejectApplication(@Param('id') id: number, @Req() req: Request) {
 		const user = req['user']
-		return this.projectProgressService.updateApplicationStatus(
+		return this.projectProgressService.updateProjectProgressStatus(
 			user,
 			Number(id),
 			ProgressStatus.rejected
 		)
+	}
+
+	@Get('progress/by-creator/:creatorId')
+	async getAllProjectByCreatorId(
+		@Param('creatorId', IdValidationPipe) creatorId: number
+	) {
+		return this.projectProgressService.getAllProjectByCreatorId(creatorId)
+	}
+
+	@Get(':projectId/freelancers')
+	async getAllCreatorsByProjectId(
+		@Param('projectId', IdValidationPipe) projectId: number,
+		@Query('status') status: ProgressStatus
+	) {
+		return this.projectProgressService.getAllCreatorsByProjectId(projectId, status)
 	}
 }

@@ -12,7 +12,7 @@ import { User, UserRole } from '@prisma/client'
 
 @Injectable()
 export class UserService {
-	constructor(private readonly prisma: PrismaService) { }
+	constructor(private readonly prisma: PrismaService) {}
 
 	// func for test
 	async createUser(createUserDto: CreateUserDto): Promise<IUser> {
@@ -44,7 +44,12 @@ export class UserService {
 	}
 
 	// real func
-	async findOrCreateUser(telegramId: number, username?: string, inviterRefCode?: string, role: 'creator' | 'advertiser' = 'creator') {
+	async findOrCreateUser(
+		telegramId: number,
+		username?: string,
+		inviterRefCode?: string,
+		role: 'creator' | 'advertiser' = 'creator'
+	) {
 		const user = await this.prisma.user.findUnique({
 			where: {
 				telegramId: telegramId.toString()
@@ -108,7 +113,9 @@ export class UserService {
 		return updatedUser
 	}
 
-	async getReferalsCount(telegramId: string): Promise<{ count: number, refLink: string }> {
+	async getReferalsCount(
+		telegramId: string
+	): Promise<{ count: number; refLink: string }> {
 		if (!telegramId) {
 			throw new BadRequestException('telegramId is required')
 		}
@@ -185,25 +192,28 @@ export class UserService {
 	}
 
 	async updateUserRole(id: number, role: UserRole): Promise<User> {
-	
 		try {
-		  const user = await this.prisma.user.update({
-			where: { id },
-			data: { role },
-		  });
-	
-		  return user;
+			const user = await this.prisma.user.update({
+				where: { id },
+				data: { role }
+			})
+
+			return user
 		} catch (error) {
-		  throw new InternalServerErrorException(`Ошибка при обновлении роли пользователя: ${error}`);
+			throw new InternalServerErrorException(
+				`Ошибка при обновлении роли пользователя: ${error}`
+			)
 		}
-	  }
+	}
 
-	// Дополнительные методы для задачи и веб-запроса
-	// private async createTaskForUser(userId: string) {
-	//   // Логика по созданию задачи для пользователя
-	// }
+	// может быть пригодится
+	// async getUserBalanceByUserId(userId: number) {
+	// 	try {
+	// 		const user = await this.prisma.user.findUnique({ where: { id: userId } })
 
-	// private async processWebQuery(queryId: string) {
-	//   // Логика по обработке веб-запроса
+	// 		return user.balance
+	// 	} catch (error) {
+	// 		throw new NotFoundException(`User с ID ${userId} не найден`)
+	// 	}
 	// }
 }
