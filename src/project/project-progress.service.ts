@@ -1,4 +1,5 @@
 import {
+	Body,
 	ForbiddenException,
 	Injectable,
 	InternalServerErrorException,
@@ -37,7 +38,11 @@ export class ProjectProgressService {
 		}
 	}
 
-	async applyToProject(user: User, projectId: number) {
+	async applyToProject(
+		user: User,
+		projectId: number,
+		@Body('message') message?: string
+	) {
 		this.checkUserRole(user, UserRole.creator)
 		try {
 			const progressProject = await this.prisma.progressProject.create({
@@ -53,7 +58,8 @@ export class ProjectProgressService {
 				role: user.role,
 				eventType: EventType.APPLICATION_SUBMITTED,
 				description: 'Заявка на участие в проекте подана.',
-				progressProjectId: progressProject.id
+				progressProjectId: progressProject.id,
+				message: message
 			})
 
 			return progressProject
@@ -68,7 +74,7 @@ export class ProjectProgressService {
 		creatorId?: number
 	) {
 		return await this.prisma.progressProject.findMany({
-			where: { projectId, ...creatorId && { userId: creatorId } },
+			where: { projectId, ...(creatorId && { userId: creatorId }) },
 			include: { Event: true }
 		})
 	}
@@ -95,12 +101,26 @@ export class ProjectProgressService {
 		})
 	}
 
-	async getProjectProgressEvents(progressProjectId: number) {
+	async getProjectProgressEvents(
+		progressProjectId: number,
+		page: number = 1,
+		limit: number = 10
+	) {
 		try {
+            const total = await this.prisma.event.count({
+                where: { progressProjectId: progressProjectId },
+              });
+          
+
+			const skip = (page - 1) * limit
+
 			const progressProject = await this.prisma.progressProject.findUnique({
 				where: { id: progressProjectId },
 				include: {
-					Event: true
+					Event: {
+						skip: skip,
+						take: limit
+					}
 				}
 			})
 
@@ -108,7 +128,7 @@ export class ProjectProgressService {
 				throw new UnauthorizedException('Прогресс проекта не найден')
 			}
 
-			return progressProject.Event
+			return {events: progressProject.Event, total}
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при получении событий прогресса проекта: ${error}`
@@ -119,7 +139,8 @@ export class ProjectProgressService {
 	async updateProjectProgressStatus(
 		user: User,
 		progressProjectId: number,
-		status: ProgressStatus
+		status: ProgressStatus,
+		message: string
 	) {
 		this.checkUserRole(user, UserRole.advertiser)
 		const projectId = await (
@@ -153,7 +174,8 @@ export class ProjectProgressService {
 				role: user.role,
 				eventType,
 				description,
-				progressProjectId: updatedProgressProject.id
+				progressProjectId: updatedProgressProject.id,
+				message: message
 			})
 
 			return updatedProgressProject

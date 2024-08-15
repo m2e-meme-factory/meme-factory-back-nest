@@ -31,6 +31,7 @@ import { ProgressStatus, Project, User } from '@prisma/client'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
 import { ProjectProgressService } from './project-progress.service'
+import { TaskProgressService } from './task-progress.service'
 
 @ApiTags('projects')
 @ApiBearerAuth('access-token')
@@ -38,7 +39,8 @@ import { ProjectProgressService } from './project-progress.service'
 export class ProjectController {
 	constructor(
 		private readonly projectService: ProjectService,
-		private readonly projectProgressService: ProjectProgressService
+		private readonly projectProgressService: ProjectProgressService,
+		private readonly taskProgressService: TaskProgressService
 	) {}
 
 	@Post()
@@ -451,10 +453,14 @@ export class ProjectController {
 	@ApiResponse({ status: 404, description: 'Прогресс проекта не найден' })
 	@Get('/progress/:progressProjectId/events')
 	async getProjectProgressEvents(
-		@Param('progressProjectId') progressProjectId: string
+		@Param('progressProjectId', IdValidationPipe) progressProjectId: number,
+		@Query('page') page: string = '1',
+		@Query('limit') limit: string = '10'
 	) {
 		return this.projectProgressService.getProjectProgressEvents(
-			Number(progressProjectId)
+			progressProjectId,
+			Number(page),
+			Number(limit)
 		)
 	}
 
@@ -463,12 +469,17 @@ export class ProjectController {
 	@ApiResponse({ status: 200, description: 'Заявка принята успешно' })
 	@ApiResponse({ status: 401, description: 'Неавторизован' })
 	@Post('progress/:id/accept')
-	async acceptApplication(@Param('id') id: number, @Req() req: Request) {
+	async acceptApplication(
+		@Param('id') id: number,
+		@Req() req: Request,
+		@Body('message') message?: string
+	) {
 		const user = req['user']
 		return this.projectProgressService.updateProjectProgressStatus(
 			user,
 			Number(id),
-			ProgressStatus.accepted
+			ProgressStatus.accepted,
+			message
 		)
 	}
 
@@ -477,12 +488,17 @@ export class ProjectController {
 	@ApiResponse({ status: 200, description: 'Заявка отклонена успешно' })
 	@ApiResponse({ status: 401, description: 'Неавторизован' })
 	@Post('progress/:id/reject')
-	async rejectApplication(@Param('id') id: number, @Req() req: Request) {
+	async rejectApplication(
+		@Param('id') id: number,
+		@Req() req: Request,
+		@Body('message') message?: string
+	) {
 		const user = req['user']
 		return this.projectProgressService.updateProjectProgressStatus(
 			user,
 			Number(id),
-			ProgressStatus.rejected
+			ProgressStatus.rejected,
+			message
 		)
 	}
 
@@ -498,6 +514,35 @@ export class ProjectController {
 		@Param('projectId', IdValidationPipe) projectId: number,
 		@Query('status') status: ProgressStatus
 	) {
-		return this.projectProgressService.getAllCreatorsByProjectId(projectId, status)
+		return this.projectProgressService.getAllCreatorsByProjectId(
+			projectId,
+			status
+		)
 	}
+
+	// task progress start
+
+	@Post(':projectId/task/:taskId/apply-completion')
+	async applyToCompleteTask(
+	  @Param('projectId', IdValidationPipe) projectId: number,
+	  @Param('taskId', IdValidationPipe) taskId: number,
+	  @Req() req: Request,
+	  @Body('message') message?: string,
+	) {
+	  const user = req['user'];
+	  return this.taskProgressService.applyToCompleteTask(user, projectId, taskId, message);
+	}
+  
+	@Post(':projectId/:taskId/approve-completion')
+	async approveTaskCompletion(
+	  @Param('projectId', IdValidationPipe) projectId: number,
+	  @Param('taskId', IdValidationPipe) taskId: number,
+	  @Req() req: Request,
+	  @Body('message') message?: string,
+	) {
+	  const user = req['user'];
+	  return this.taskProgressService.approveTaskCompletion(user, projectId, taskId, message);
+	}
+
+	// task progress end
 }
