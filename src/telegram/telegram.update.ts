@@ -4,7 +4,7 @@ import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { UserService } from 'src/user/user.service'
 import { Context, Markup, Telegraf } from 'telegraf'
 
-const ORIGIN_URL = "https://api.digital-boost.site/uploads/projects";
+const ORIGIN_URL = process.env.HOST_URL + "/uploads/projects";
 
 @Update()
 export class TelegramUpdate {
