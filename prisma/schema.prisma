@@ -35,7 +35,7 @@ model User {
   projects            Project[]
   role                UserRole             @default(creator)
   Event               Event[]
-  balance             Float                @default(0)
+  balance             Decimal              @default(0)
 
   ProgressProject ProgressProject[]
 }
@@ -59,7 +59,7 @@ model Project {
   tags        String[]
   category    String
   subtasks    Task[]
-  price       Float
+  price       Decimal
   author      User          @relation(fields: [authorId], references: [id])
   tasks       ProjectTask[]
   status      ProjectStatus @default(draft)
@@ -73,7 +73,7 @@ model Task {
   id          Int           @id @default(autoincrement())
   title       String
   description String
-  price       Float
+  price       Decimal
   projects    ProjectTask[]
 
   User User[]
@@ -103,7 +103,7 @@ model Transaction {
   taskId     Int
   fromUserId Int
   toUserId   Int
-  amount     Float
+  amount     Decimal
   createdAt  DateTime @default(now())
 }
 

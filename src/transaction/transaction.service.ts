@@ -1,16 +1,28 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { Transaction } from '@prisma/client'
-import { CreateTransactionDto, UpdateTransactionDto } from './dto/transaction.dto'
+import {
+	CreateTransactionDto,
+	UpdateTransactionDto
+} from './dto/transaction.dto'
 import { PrismaService } from 'src/prisma/prisma.service'
+import { UserService } from 'src/user/user.service'
 
 @Injectable()
 export class TransactionService {
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly userService: UserService
+	) {}
 
-	async createTransaction(data: CreateTransactionDto): Promise<Transaction> {
-		return this.prisma.transaction.create({
-			data
-		})
+	async createTransaction(
+		data: CreateTransactionDto
+	): Promise<{ transaction: Transaction; newBalance: number }> {
+		const updatedBalance = await this.userService.updateUserBalanceByUserId(
+			data.toUserId,
+			data.amount
+		)
+		const transaction = await this.prisma.transaction.create({ data })
+		return { transaction: transaction, newBalance: updatedBalance }
 	}
 
 	async findAll(): Promise<Transaction[]> {
@@ -27,16 +39,13 @@ export class TransactionService {
 		return transaction
 	}
 
-    async findUserTransactions(userId: number): Promise<Transaction[]> {
-        return this.prisma.transaction.findMany({
-          where: {
-            OR: [
-              { fromUserId: userId },
-              { toUserId: userId },
-            ],
-          },
-        });
-      }
+	async findUserTransactions(userId: number): Promise<Transaction[]> {
+		return this.prisma.transaction.findMany({
+			where: {
+				OR: [{ fromUserId: userId }, { toUserId: userId }]
+			}
+		})
+	}
 
 	async update(id: number, data: UpdateTransactionDto): Promise<Transaction> {
 		const transaction = await this.prisma.transaction.update({

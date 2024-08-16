@@ -1,11 +1,15 @@
 import {
+	ConflictException,
 	// ConflictException,
 	Injectable,
+	InternalServerErrorException,
 	NotFoundException
 } from '@nestjs/common'
-import { EventType, ProgressStatus, User } from '@prisma/client'
+import { EventType, ProgressStatus, User, UserRole } from '@prisma/client'
 import { EventService } from 'src/event/event.service'
 import { PrismaService } from 'src/prisma/prisma.service'
+import { checkUserRole } from './project.helper'
+import { IDetails } from './types/project.types'
 
 @Injectable()
 export class TaskProgressService {
@@ -20,22 +24,35 @@ export class TaskProgressService {
 		taskId: number,
 		message?: string
 	) {
-		// this.checkUserRole(user, UserRole.creator);
+		checkUserRole(user, UserRole.creator)
 
 		try {
 			const existingProgress = await this.prisma.progressProject.findFirst({
 				where: {
 					userId: user.id,
 					projectId,
-					status: { in: [ProgressStatus.accepted, ProgressStatus.pending] }
-				}
+					status: { in: [ProgressStatus.accepted] }
+				},
+				include: { Event: true }
 			})
 
-			// if (existingProgress) {
-			// 	throw new ConflictException(
-			// 		'Заявка на завершение задачи уже подана или одобрена.'
-			// 	)
-			// }
+			if (!existingProgress) {
+				throw new ConflictException(
+					'Заявка на проект не подана или не одобрена'
+				)
+			}
+
+			if (
+				existingProgress.Event.some(item => {
+					const details = item.details as IDetails | undefined
+					return (
+						details?.taskId === taskId &&
+						item.eventType === EventType.TASK_SUBMIT
+					)
+				})
+			) {
+				throw new ConflictException('Заявка на задание уже подана')
+			}
 
 			const event = await this.eventService.createEvent({
 				userId: user.id,
@@ -52,7 +69,9 @@ export class TaskProgressService {
 
 			return event
 		} catch (error) {
-			throw new Error(`Ошибка при подаче заявки на завершение задачи: ${error}`)
+			throw new InternalServerErrorException(
+				`Ошибка при подаче заявки на завершение задачи: ${error}`
+			)
 		}
 	}
 
@@ -60,40 +79,64 @@ export class TaskProgressService {
 		user: User,
 		projectId: number,
 		taskId: number,
+		creatorId: number,
 		message?: string
 	) {
-		// this.checkUserRole(user, UserRole.creator);
-
+		checkUserRole(user, UserRole.advertiser)
 		try {
-			const existingProgress = await this.prisma.progressProject.findFirst({
-				where: {
-					project: {
-                        authorId: user.id
-                    },
-					status: ProgressStatus.accepted
+			return await this.prisma.$transaction(async prisma => {
+				const task = await prisma.task.findFirst({ where: { id: taskId } })
+				if (!task) {
+					throw new NotFoundException(`Задача с ID ${taskId} не найдена`)
 				}
-			})
 
-			if (!existingProgress) {
-				throw new NotFoundException('Прогресс проекта не найден')
-			}
-
-			const event = await this.eventService.createEvent({
-				userId: user.id,
-				projectId,
-				role: user.role,
-				eventType: EventType.TASK_COMPLETED,
-				description: 'Завершение задачи одобрено.',
-				message: message,
-				progressProjectId: existingProgress.id,
-				details: {
-					taskId: taskId
+				const projectTask = await prisma.projectTask.findFirst({
+					where: { taskId: taskId }
+				})
+				if (!projectTask) {
+					throw new NotFoundException(`Проект задачи с ID ${taskId} не найден`)
 				}
-			})
 
-			return event
+				const transaction = await prisma.transaction.create({
+					data: {
+						amount: task.price,
+						fromUserId: user.id,
+						toUserId: creatorId,
+						taskId: taskId,
+						projectId: projectTask.projectId
+					}
+				})
+
+				const existingProgress = await prisma.progressProject.findFirst({
+					where: {
+						projectId: projectId,
+						userId: creatorId,
+						status: ProgressStatus.accepted
+					}
+				})
+
+				if (!existingProgress) {
+					throw new NotFoundException('Прогресс проекта не найден')
+				}
+				const event = await this.eventService.createEvent({
+					userId: user.id,
+					projectId,
+					role: user.role,
+					eventType: EventType.TASK_COMPLETED,
+					description: 'Завершение задачи одобрено.',
+					message: message,
+					progressProjectId: existingProgress.id,
+					details: {
+						taskId: taskId
+					}
+				})
+
+				return { event: event, transaction: transaction }
+			})
 		} catch (error) {
-			throw new Error(`Ошибка при одобрении завершения задачи: ${error}`)
+			throw new InternalServerErrorException(
+				`Ошибка при одобрении завершения задачи: ${error.message}`
+			)
 		}
 	}
 }

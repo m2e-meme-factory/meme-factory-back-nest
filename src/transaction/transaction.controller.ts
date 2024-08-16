@@ -12,7 +12,7 @@ export class TransactionController {
 	@Post()
 	async create(
 		@Body() createTransactionDto: CreateTransactionDto
-	): Promise<Transaction> {
+	): Promise<{transaction: Transaction, newBalance: number}> {
 		return this.transactionService.createTransaction(createTransactionDto)
 	}
 

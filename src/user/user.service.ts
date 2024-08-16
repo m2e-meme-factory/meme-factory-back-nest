@@ -206,7 +206,26 @@ export class UserService {
 		}
 	}
 
-	// может быть пригодится
+	async updateUserBalanceByUserId(userId: number, amountToAdd: number) {
+		try {
+			const user = await this.prisma.user.update({
+				where: { id: userId },
+				data: {
+					balance: {
+						increment: amountToAdd
+					}
+				},
+				select: {
+					balance: true
+				}
+			})
+
+			return user.balance
+		} catch (error) {
+			throw new NotFoundException(`User с ID ${userId} не найден`)
+		}
+	}
+
 	// async getUserBalanceByUserId(userId: number) {
 	// 	try {
 	// 		const user = await this.prisma.user.findUnique({ where: { id: userId } })

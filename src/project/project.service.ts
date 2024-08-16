@@ -400,7 +400,7 @@ export class ProjectService {
 
 	// 		return response
 	// 	} catch (error) {
-	// 		throw new InternalServerErrorException(
+	// 		throw new InternalServerException(
 	// 			`Ошибка при отклике на задание: ${error}`
 	// 		)
 	// 	}

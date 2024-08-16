@@ -546,18 +546,20 @@ export class ProjectController {
 		)
 	}
 
-	@Post(':projectId/:taskId/approve-completion')
+	@Post(':projectId/task/:taskId/approve-completion')
 	async approveTaskCompletion(
 		@Param('projectId', IdValidationPipe) projectId: number,
 		@Param('taskId', IdValidationPipe) taskId: number,
 		@Req() req: Request,
-		@Body('message') message?: string
+		@Body('creatorId') creatorId: number,
+		@Body('message') message?: string,
 	) {
 		const user = req['user']
 		return this.taskProgressService.approveTaskCompletion(
 			user,
 			projectId,
 			taskId,
+			creatorId,
 			message
 		)
 	}

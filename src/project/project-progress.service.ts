@@ -1,13 +1,12 @@
 import {
-	ForbiddenException,
 	Injectable,
 	InternalServerErrorException,
-	NotFoundException,
 	UnauthorizedException
 } from '@nestjs/common'
 import { EventType, ProgressStatus, User, UserRole } from '@prisma/client'
 import { EventService } from 'src/event/event.service'
 import { PrismaService } from 'src/prisma/prisma.service'
+import { checkProjectOwnership, checkUserRole } from './project.helper'
 
 @Injectable()
 export class ProjectProgressService {
@@ -17,32 +16,12 @@ export class ProjectProgressService {
 		private readonly eventService: EventService
 	) {}
 
-	private checkUserRole(user: User, role: UserRole) {
-		if (user.role !== role) {
-			throw new ForbiddenException(
-				`Only users with role ${role} can perform this action`
-			)
-		}
-	}
-
-	private async checkProjectOwnership(projectId: number, userId: number) {
-		const project = await this.prisma.project.findUnique({
-			where: { id: projectId }
-		})
-		if (!project) {
-			throw new NotFoundException(`Project with ID ${projectId} not found`)
-		}
-		if (project.authorId !== userId) {
-			throw new ForbiddenException('You can only modify your own projects')
-		}
-	}
-
 	async applyToProject(
 		user: User,
 		projectId: number,
 		message: string = ''
 	) {
-		this.checkUserRole(user, UserRole.creator)
+		checkUserRole(user, UserRole.creator)
 		try {
 			const progressProject = await this.prisma.progressProject.create({
 				data: {
@@ -63,7 +42,7 @@ export class ProjectProgressService {
 
 			return progressProject
 		} catch (error) {
-			throw new Error(`Ошибка при подаче заявки на проект: ${error}`)
+			throw new InternalServerErrorException(`Ошибка при подаче заявки на проект: ${error}`)
 		}
 	}
 
@@ -141,13 +120,13 @@ export class ProjectProgressService {
 		status: ProgressStatus,
 		message: string
 	) {
-		this.checkUserRole(user, UserRole.advertiser)
+		checkUserRole(user, UserRole.advertiser)
 		const projectId = await (
 			await this.prisma.progressProject.findUnique({
 				where: { id: progressProjectId }
 			})
 		).projectId
-		this.checkProjectOwnership(projectId, user.id)
+		checkProjectOwnership(projectId, user.id)
 		try {
 			const updatedProgressProject = await this.prisma.progressProject.update({
 				where: { id: progressProjectId },
@@ -164,7 +143,7 @@ export class ProjectProgressService {
 				eventType = EventType.APPLICATION_REJECTED
 				description = 'Заявка на участие в проекте отклонена.'
 			} else {
-				throw new Error('Некорректный статус заявки')
+				throw new InternalServerErrorException('Некорректный статус заявки')
 			}
 
 			await this.eventService.createEvent({
@@ -179,7 +158,7 @@ export class ProjectProgressService {
 
 			return updatedProgressProject
 		} catch (error) {
-			throw new Error('Ошибка при обновлении статуса заявки')
+			throw new InternalServerErrorException('Ошибка при обновлении статуса заявки')
 		}
 	}
 }
