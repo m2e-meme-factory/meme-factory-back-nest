@@ -435,9 +435,17 @@ export class ProjectController {
 	@ApiResponse({ status: 201, description: 'Заявка подана успешно' })
 	@ApiResponse({ status: 401, description: 'Неавторизован' })
 	@Post(':id/apply')
-	async applyToProject(@Param('id') projectId: string, @Req() req: Request) {
+	async applyToProject(
+		@Param('id') projectId: string,
+		@Req() req: Request,
+		@Body('message') message?: string
+	) {
 		const user = req['user']
-		return this.projectProgressService.applyToProject(user, Number(projectId))
+		return this.projectProgressService.applyToProject(
+			user,
+			Number(projectId),
+			message
+		)
 	}
 
 	@ApiOperation({ summary: 'Получить события прогресса проекта по ID' })
@@ -524,24 +532,34 @@ export class ProjectController {
 
 	@Post(':projectId/task/:taskId/apply-completion')
 	async applyToCompleteTask(
-	  @Param('projectId', IdValidationPipe) projectId: number,
-	  @Param('taskId', IdValidationPipe) taskId: number,
-	  @Req() req: Request,
-	  @Body('message') message?: string,
+		@Param('projectId', IdValidationPipe) projectId: number,
+		@Param('taskId', IdValidationPipe) taskId: number,
+		@Req() req: Request,
+		@Body('message') message?: string
 	) {
-	  const user = req['user'];
-	  return this.taskProgressService.applyToCompleteTask(user, projectId, taskId, message);
+		const user = req['user']
+		return this.taskProgressService.applyToCompleteTask(
+			user,
+			projectId,
+			taskId,
+			message
+		)
 	}
-  
+
 	@Post(':projectId/:taskId/approve-completion')
 	async approveTaskCompletion(
-	  @Param('projectId', IdValidationPipe) projectId: number,
-	  @Param('taskId', IdValidationPipe) taskId: number,
-	  @Req() req: Request,
-	  @Body('message') message?: string,
+		@Param('projectId', IdValidationPipe) projectId: number,
+		@Param('taskId', IdValidationPipe) taskId: number,
+		@Req() req: Request,
+		@Body('message') message?: string
 	) {
-	  const user = req['user'];
-	  return this.taskProgressService.approveTaskCompletion(user, projectId, taskId, message);
+		const user = req['user']
+		return this.taskProgressService.approveTaskCompletion(
+			user,
+			projectId,
+			taskId,
+			message
+		)
 	}
 
 	// task progress end

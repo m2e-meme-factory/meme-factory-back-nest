@@ -1,5 +1,4 @@
 import {
-	Body,
 	ForbiddenException,
 	Injectable,
 	InternalServerErrorException,
@@ -41,7 +40,7 @@ export class ProjectProgressService {
 	async applyToProject(
 		user: User,
 		projectId: number,
-		@Body('message') message?: string
+		message?: string
 	) {
 		this.checkUserRole(user, UserRole.creator)
 		try {
