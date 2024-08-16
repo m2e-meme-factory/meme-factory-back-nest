@@ -40,7 +40,7 @@ export class ProjectProgressService {
 	async applyToProject(
 		user: User,
 		projectId: number,
-		message?: string
+		message: string = ''
 	) {
 		this.checkUserRole(user, UserRole.creator)
 		try {
@@ -58,7 +58,7 @@ export class ProjectProgressService {
 				eventType: EventType.APPLICATION_SUBMITTED,
 				description: 'Заявка на участие в проекте подана.',
 				progressProjectId: progressProject.id,
-				message: message
+				message
 			})
 
 			return progressProject

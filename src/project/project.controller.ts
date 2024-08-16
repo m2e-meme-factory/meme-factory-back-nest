@@ -438,7 +438,7 @@ export class ProjectController {
 	async applyToProject(
 		@Param('id') projectId: string,
 		@Req() req: Request,
-		@Body('message') message?: string
+		@Body('message') message: string = ''
 	) {
 		const user = req['user']
 		return this.projectProgressService.applyToProject(
