@@ -46,4 +46,8 @@ export class CreateEventDto {
 
 	@IsInt()
 	progressProjectId: number
+
+	@IsString()
+	@IsOptional()
+	message?: string
 }

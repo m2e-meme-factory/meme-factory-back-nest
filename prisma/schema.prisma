@@ -144,6 +144,7 @@ model Event {
   Project         Project          @relation(fields: [projectId], references: [id])
   User            User             @relation(fields: [userId], references: [id])
   progressProject ProgressProject? @relation(fields: [progressProjectId], references: [id])
+  message         String?
 
   @@index([projectId])
   @@index([userId])
@@ -156,6 +157,8 @@ enum EventType {
   APPLICATION_SUBMITTED
   APPLICATION_APPROVED
   APPLICATION_REJECTED
+  TASK_SUBMIT
+  TASK_REJECTED
   TASK_COMPLETED
   TASK_UPDATED
   TRANSACTION_COMPLETED
