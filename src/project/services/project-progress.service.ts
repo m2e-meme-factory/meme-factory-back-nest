@@ -51,7 +51,7 @@ export class ProjectProgressService {
 	) {
 		return await this.prisma.progressProject.findMany({
 			where: { projectId, ...(creatorId && { userId: creatorId }) },
-			include: { Event: true }
+			include: { events: true }
 		})
 	}
 
@@ -116,7 +116,7 @@ export class ProjectProgressService {
 			const progressProject = await this.prisma.progressProject.findUnique({
 				where: { id: progressProjectId },
 				include: {
-					Event: {
+					events: {
 						skip: skip,
 						take: limit
 					}
@@ -127,7 +127,7 @@ export class ProjectProgressService {
 				throw new UnauthorizedException('Прогресс проекта не найден')
 			}
 
-			return { events: progressProject.Event, total }
+			return { events: progressProject.events, total }
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при получении событий прогресса проекта: ${error}`

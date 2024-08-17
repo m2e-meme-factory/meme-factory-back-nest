@@ -39,7 +39,7 @@ export class TaskProgressService {
 					projectId: projectTask.projectId,
 					status: { in: [ProgressStatus.accepted] }
 				},
-				include: { Event: true }
+				include: { events: true }
 			})
 
 			if (!existingProgress) {
@@ -49,7 +49,7 @@ export class TaskProgressService {
 			}
 
 			if (
-				existingProgress.Event.some(item => {
+				existingProgress.events.some(item => {
 					const details = item.details as IDetails | undefined
 					return (
 						details?.taskId === taskId &&

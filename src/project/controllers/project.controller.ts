@@ -27,7 +27,7 @@ import {
 	UpdateProjectDto,
 	UpdateProjectStatusDto
 } from '../dto/project.dto'
-import { ProgressStatus, Project, User } from '@prisma/client'
+import { ProgressStatus, Project, ProjectStatus, User } from '@prisma/client'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
 import { ProjectProgressService } from '../services/project-progress.service'
@@ -60,20 +60,7 @@ export class ProjectController {
 				tags: ['tag1', 'tag2'],
 				category: 'Category Name',
 				price: 1000,
-				tasks: [
-					{
-						id: 1,
-						title: 'Task 1',
-						description: 'Description of task 1',
-						price: 500
-					},
-					{
-						id: 2,
-						title: 'Task 2',
-						description: 'Description of task 2',
-						price: 500
-					}
-				]
+				status: ProjectStatus.draft
 			}
 		}
 	})
@@ -95,27 +82,31 @@ export class ProjectController {
 		description: 'Проект найден.',
 		schema: {
 			example: {
-				id: 1,
-				authorId: 1,
-				title: 'Example Project',
-				description: 'Description of the example project',
-				bannerUrl: 'http://example.com/banner.png',
-				files: ['file1.png', 'file2.png'],
-				tags: ['tag1', 'tag2'],
-				category: 'Category Name',
-				price: 1000,
+				id: 20,
+				authorId: 7,
+				title: 'example for tasks',
+				description: 'example',
+				bannerUrl: 'example',
+				files: [
+					'uploads/file1.png',
+					'uploads/file2.png',
+					'uploads/file3.png',
+				],
+				tags: ['priority'],
+				category: 'example category',
+				price: 100,
+				status: ProjectStatus.draft,
 				tasks: [
 					{
-						id: 1,
-						title: 'Task 1',
-						description: 'Description of task 1',
-						price: 500
-					},
-					{
-						id: 2,
-						title: 'Task 2',
-						description: 'Description of task 2',
-						price: 500
+						projectId: 20,
+						taskId: 19,
+						task: {
+							id: 19,
+							title: 'example title of task for validation',
+							description:
+								'example decription',
+							price: 10
+						}
 					}
 				]
 			}
@@ -409,8 +400,6 @@ export class ProjectController {
 	// 	)
 	// }
 
-	
-
 	@ApiOperation({ summary: 'Подать заявку на участие в проекте' })
 	@ApiParam({ name: 'id', type: 'string', description: 'ID проекта' })
 	@ApiResponse({ status: 201, description: 'Заявка подана успешно' })
@@ -429,9 +418,6 @@ export class ProjectController {
 		)
 	}
 
-	
-
-	
 	@Get(':projectId/freelancers')
 	async getAllCreatorsByProjectId(
 		@Param('projectId', IdValidationPipe) projectId: number,
