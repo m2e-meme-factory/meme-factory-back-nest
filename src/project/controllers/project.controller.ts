@@ -3,7 +3,6 @@ import {
 	Get,
 	Post,
 	Put,
-	Delete,
 	Body,
 	Param,
 	Req,
@@ -87,11 +86,7 @@ export class ProjectController {
 				title: 'example for tasks',
 				description: 'example',
 				bannerUrl: 'example',
-				files: [
-					'uploads/file1.png',
-					'uploads/file2.png',
-					'uploads/file3.png',
-				],
+				files: ['uploads/file1.png', 'uploads/file2.png', 'uploads/file3.png'],
 				tags: ['priority'],
 				category: 'example category',
 				price: 100,
@@ -103,8 +98,7 @@ export class ProjectController {
 						task: {
 							id: 19,
 							title: 'example title of task for validation',
-							description:
-								'example decription',
+							description: 'example decription',
 							price: 10
 						}
 					}
@@ -129,27 +123,30 @@ export class ProjectController {
 			example: {
 				projects: [
 					{
-						id: 1,
-						authorId: 1,
-						title: 'Example Project',
-						description: 'Description of the example project',
-						bannerUrl: 'http://example.com/banner.png',
-						files: ['file1.png', 'file2.png'],
-						tags: ['tag1', 'tag2'],
-						category: 'Category Name',
-						price: 1000,
+						id: 20,
+						authorId: 7,
+						title: 'example for tasks',
+						description: 'example',
+						bannerUrl: 'example',
+						files: [
+							'uploads/file1.png',
+							'uploads/file2.png',
+							'uploads/file3.png'
+						],
+						tags: ['priority'],
+						category: 'example category',
+						price: 100,
+						status: ProjectStatus.draft,
 						tasks: [
 							{
-								id: 1,
-								title: 'Task 1',
-								description: 'Description of task 1',
-								price: 500
-							},
-							{
-								id: 2,
-								title: 'Task 2',
-								description: 'Description of task 2',
-								price: 500
+								projectId: 20,
+								taskId: 19,
+								task: {
+									id: 19,
+									title: 'example title of task for validation',
+									description: 'example decription',
+									price: 10
+								}
 							}
 						]
 					}
@@ -204,27 +201,30 @@ export class ProjectController {
 			example: {
 				projects: [
 					{
-						id: 1,
-						authorId: 1,
-						title: 'Example Project',
-						description: 'Description of the example project',
-						bannerUrl: 'http://example.com/banner.png',
-						files: ['file1.png', 'file2.png'],
-						tags: ['tag1', 'tag2'],
-						category: 'Category Name',
-						price: 1000,
+						id: 20,
+						authorId: 7,
+						title: 'example for tasks',
+						description: 'example',
+						bannerUrl: 'example',
+						files: [
+							'uploads/file1.png',
+							'uploads/file2.png',
+							'uploads/file3.png'
+						],
+						tags: ['priority'],
+						category: 'example category',
+						price: 100,
+						status: ProjectStatus.draft,
 						tasks: [
 							{
-								id: 1,
-								title: 'Task 1',
-								description: 'Description of task 1',
-								price: 500
-							},
-							{
-								id: 2,
-								title: 'Task 2',
-								description: 'Description of task 2',
-								price: 500
+								projectId: 20,
+								taskId: 19,
+								task: {
+									id: 19,
+									title: 'example title of task for validation',
+									description: 'example decription',
+									price: 10
+								}
 							}
 						]
 					}
@@ -327,15 +327,16 @@ export class ProjectController {
 		)
 	}
 
-	@Delete(':id')
-	@ApiOperation({ summary: 'Удалить проект' })
-	@ApiParam({ name: 'id', description: 'ID проекта' })
-	@ApiResponse({ status: 200, description: 'Проект успешно удален.' })
-	@ApiResponse({ status: 404, description: 'Проект не найден.' })
-	async deleteProject(@Param('id') id: string): Promise<Project> {
-		const projectId = parseInt(id)
-		return this.projectService.deleteProject(projectId)
-	}
+	// Мб для админки пригодится
+	// @Delete(':id')
+	// @ApiOperation({ summary: 'Удалить проект' })
+	// @ApiParam({ name: 'id', description: 'ID проекта' })
+	// @ApiResponse({ status: 200, description: 'Проект успешно удален.' })
+	// @ApiResponse({ status: 404, description: 'Проект не найден.' })
+	// async deleteProject(@Param('id') id: string): Promise<Project> {
+	// 	const projectId = parseInt(id)
+	// 	return this.projectService.deleteProject(projectId)
+	// }
 
 	@Get(':id/files_tg/:tg_id')
 	@ApiOperation({ summary: 'Send project files to Telegram user' })
@@ -402,7 +403,20 @@ export class ProjectController {
 
 	@ApiOperation({ summary: 'Подать заявку на участие в проекте' })
 	@ApiParam({ name: 'id', type: 'string', description: 'ID проекта' })
-	@ApiResponse({ status: 201, description: 'Заявка подана успешно' })
+	@ApiResponse({
+		status: 201,
+		description: 'Заявка подана успешно',
+		schema: {
+			example: {
+				id: 20,
+				userId: 7,
+				projectId: 20,
+				status: 'pending',
+				createdAt: '2024-08-16T20:01:22.146Z',
+				updatedAt: '2024-08-16T20:01:22.146Z'
+			}
+		}
+	})
 	@ApiResponse({ status: 401, description: 'Неавторизован' })
 	@Post(':id/apply')
 	async applyToProject(

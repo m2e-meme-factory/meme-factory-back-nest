@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
 import { EventService } from './event.service'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
-import { ApiResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger'
+import { ApiResponse, ApiOperation, ApiParam, ApiQuery, ApiTags, ApiBody } from '@nestjs/swagger'
 import { CreateEventDto } from './dto/event.dto';
 
 @Controller('events')
@@ -11,6 +11,7 @@ export class EventController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new event' })
+  @ApiBody({type: CreateEventDto})
   @ApiResponse({ status: 201, description: 'Event successfully created', type: Event })
   @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async createEvent(@Body() createEventDto: CreateEventDto) {
