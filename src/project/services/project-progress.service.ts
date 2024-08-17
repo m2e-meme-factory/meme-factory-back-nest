@@ -55,9 +55,7 @@ export class ProjectProgressService {
 		})
 	}
 
-	async getAllProjectByCreatorId(
-		creatorId: number
-	) {
+	async getAllProjectByCreatorId(creatorId: number) {
 		const progressProjects = await this.prisma.progressProject.findMany({
 			where: {
 				userId: creatorId
