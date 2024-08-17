@@ -1,10 +1,11 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
 import { EventService } from './event.service'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
-import { ApiResponse, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger'
+import { ApiResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { CreateEventDto } from './dto/event.dto';
 
 @Controller('events')
+@ApiTags('events')
 export class EventController {
 	constructor(private readonly eventService: EventService) {}
 

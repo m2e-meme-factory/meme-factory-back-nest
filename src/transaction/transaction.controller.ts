@@ -3,8 +3,9 @@ import { Body, Delete, Get, Param, Post, Put } from '@nestjs/common'
 import { Transaction } from '@prisma/client'
 import { CreateTransactionDto, UpdateTransactionDto } from './dto/transaction.dto'
 import { TransactionService } from './transaction.service';
-import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('transactions')
 @Controller('transactions')
 export class TransactionController {
     constructor(private readonly transactionService: TransactionService) {}
