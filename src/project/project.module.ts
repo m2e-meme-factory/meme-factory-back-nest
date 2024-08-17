@@ -8,10 +8,11 @@ import { EventService } from 'src/event/event.service';
 import { ProjectProgressService } from './services/project-progress.service';
 import { TaskProgressService } from './services/task-progress.service';
 import { TaskController } from './controllers/task.controller';
+import { ProjectProgressController } from './controllers/project-progress.controller';
 
 @Module({
   imports: [PrismaModule],
   providers: [ProjectService, TelegramUpdate, UserService, EventService, ProjectProgressService, TaskProgressService],
-  controllers: [ProjectController, TaskController]
+  controllers: [ProjectController, TaskController, ProjectProgressController]
 })
 export class ProjectModule {}
