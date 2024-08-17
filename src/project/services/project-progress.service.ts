@@ -6,7 +6,7 @@ import {
 import { EventType, ProgressStatus, User, UserRole } from '@prisma/client'
 import { EventService } from 'src/event/event.service'
 import { PrismaService } from 'src/prisma/prisma.service'
-import { checkProjectOwnership, checkUserRole } from './project.helper'
+import { checkProjectOwnership, checkUserRole } from '../project.utils'
 
 @Injectable()
 export class ProjectProgressService {
@@ -16,11 +16,7 @@ export class ProjectProgressService {
 		private readonly eventService: EventService
 	) {}
 
-	async applyToProject(
-		user: User,
-		projectId: number,
-		message: string = ''
-	) {
+	async applyToProject(user: User, projectId: number, message: string = '') {
 		checkUserRole(user, UserRole.creator)
 		try {
 			const progressProject = await this.prisma.progressProject.create({
@@ -42,7 +38,9 @@ export class ProjectProgressService {
 
 			return progressProject
 		} catch (error) {
-			throw new InternalServerErrorException(`Ошибка при подаче заявки на проект: ${error}`)
+			throw new InternalServerErrorException(
+				`Ошибка при подаче заявки на проект: ${error}`
+			)
 		}
 	}
 
@@ -68,7 +66,7 @@ export class ProjectProgressService {
 		})
 	}
 	async getAllCreatorsByProjectId(projectId: number, status: ProgressStatus) {
-		return await this.prisma.progressProject.findMany({
+		const progressProjects = await this.prisma.progressProject.findMany({
 			where: {
 				projectId,
 				status
@@ -77,6 +75,17 @@ export class ProjectProgressService {
 				user: true
 			}
 		})
+
+		return progressProjects.map(progress => ({
+			user: progress.user,
+			progress: {
+				id: progress.id,
+				projectId: progress.projectId,
+				status: progress.status,
+				createdAt: progress.createdAt,
+				updatedAt: progress.updatedAt
+			}
+		}))
 	}
 
 	async getProjectProgressEvents(
@@ -85,10 +94,9 @@ export class ProjectProgressService {
 		limit: number = 10
 	) {
 		try {
-            const total = await this.prisma.event.count({
-                where: { progressProjectId: progressProjectId },
-              });
-          
+			const total = await this.prisma.event.count({
+				where: { progressProjectId: progressProjectId }
+			})
 
 			const skip = (page - 1) * limit
 
@@ -106,7 +114,7 @@ export class ProjectProgressService {
 				throw new UnauthorizedException('Прогресс проекта не найден')
 			}
 
-			return {events: progressProject.Event, total}
+			return { events: progressProject.Event, total }
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при получении событий прогресса проекта: ${error}`
@@ -158,7 +166,9 @@ export class ProjectProgressService {
 
 			return updatedProgressProject
 		} catch (error) {
-			throw new InternalServerErrorException('Ошибка при обновлении статуса заявки')
+			throw new InternalServerErrorException(
+				'Ошибка при обновлении статуса заявки'
+			)
 		}
 	}
 }

@@ -8,8 +8,8 @@ import {
 import { EventType, ProgressStatus, User, UserRole } from '@prisma/client'
 import { EventService } from 'src/event/event.service'
 import { PrismaService } from 'src/prisma/prisma.service'
-import { checkUserRole } from './project.helper'
-import { IDetails } from './types/project.types'
+import { checkUserRole } from '../project.utils'
+import { IDetails } from '../types/project.types'
 
 @Injectable()
 export class TaskProgressService {
@@ -20,17 +20,23 @@ export class TaskProgressService {
 
 	async applyToCompleteTask(
 		user: User,
-		projectId: number,
 		taskId: number,
 		message?: string
 	) {
 		checkUserRole(user, UserRole.creator)
 
 		try {
+			const projectTask = await this.prisma.projectTask.findFirst({
+				where: { taskId: taskId }
+			})
+			if (!projectTask) {
+				throw new NotFoundException(`Проект задачи с ID ${taskId} не найден`)
+			}
+
 			const existingProgress = await this.prisma.progressProject.findFirst({
 				where: {
 					userId: user.id,
-					projectId,
+					projectId: projectTask.projectId,
 					status: { in: [ProgressStatus.accepted] }
 				},
 				include: { Event: true }
@@ -56,7 +62,7 @@ export class TaskProgressService {
 
 			const event = await this.eventService.createEvent({
 				userId: user.id,
-				projectId,
+				projectId: projectTask.projectId,
 				role: user.role,
 				eventType: EventType.TASK_SUBMIT,
 				description: 'Заявка на завершение задачи подана.',
@@ -77,7 +83,6 @@ export class TaskProgressService {
 
 	async approveTaskCompletion(
 		user: User,
-		projectId: number,
 		taskId: number,
 		creatorId: number,
 		message?: string
@@ -109,7 +114,7 @@ export class TaskProgressService {
 
 				const existingProgress = await prisma.progressProject.findFirst({
 					where: {
-						projectId: projectId,
+						projectId: projectTask.projectId,
 						userId: creatorId,
 						status: ProgressStatus.accepted
 					}
@@ -120,7 +125,7 @@ export class TaskProgressService {
 				}
 				const event = await this.eventService.createEvent({
 					userId: user.id,
-					projectId,
+					projectId: projectTask.projectId,
 					role: user.role,
 					eventType: EventType.TASK_COMPLETED,
 					description: 'Завершение задачи одобрено.',

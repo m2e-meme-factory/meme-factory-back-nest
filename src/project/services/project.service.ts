@@ -4,7 +4,7 @@ import {
 	InternalServerErrorException,
 	ForbiddenException,
 } from '@nestjs/common'
-import { PrismaService } from '../prisma/prisma.service'
+import { PrismaService } from '../../prisma/prisma.service'
 import {
 	Prisma,
 	Project,
@@ -12,7 +12,7 @@ import {
 	User,
 	UserRole
 } from '@prisma/client'
-import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto'
+import { CreateProjectDto, UpdateProjectDto } from '../dto/project.dto'
 import { TelegramUpdate } from 'src/telegram/telegram.update'
 import { EventService } from 'src/event/event.service'
 

@@ -21,17 +21,17 @@ import {
 	ApiBearerAuth,
 	ApiQuery
 } from '@nestjs/swagger'
-import { ProjectService } from './project.service'
+import { ProjectService } from '../services/project.service'
 import {
 	CreateProjectDto,
 	UpdateProjectDto,
 	UpdateProjectStatusDto
-} from './dto/project.dto'
+} from '../dto/project.dto'
 import { ProgressStatus, Project, User } from '@prisma/client'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
-import { ProjectProgressService } from './project-progress.service'
-import { TaskProgressService } from './task-progress.service'
+import { ProjectProgressService } from '../services/project-progress.service'
+import { TaskProgressService } from '../services/task-progress.service'
 
 @ApiTags('projects')
 @ApiBearerAuth('access-token')
@@ -415,12 +415,18 @@ export class ProjectController {
 		status: 200,
 		description: 'Успешное получение прогресса проекта'
 	})
+	@ApiQuery({
+		name: 'creatorId',
+		required: false,
+		type: [String],
+		example: ['1']
+	})
 	@ApiResponse({ status: 401, description: 'Неавторизован' })
 	@Get('progress/by-project/:projectId')
 	async getAllProjectProgressByProjectId(
 		@Param('projectId', IdValidationPipe) projectId: number,
-		@Query('creatorId') creatorId: string,
-		@Req() req: Request
+		@Req() req: Request,
+		@Query('creatorId') creatorId?: string,
 	) {
 		const user = req['user']
 		return this.projectProgressService.getAllProjectProgressByProjectId(
@@ -527,42 +533,4 @@ export class ProjectController {
 			status
 		)
 	}
-
-	// task progress start
-
-	@Post(':projectId/task/:taskId/apply-completion')
-	async applyToCompleteTask(
-		@Param('projectId', IdValidationPipe) projectId: number,
-		@Param('taskId', IdValidationPipe) taskId: number,
-		@Req() req: Request,
-		@Body('message') message?: string
-	) {
-		const user = req['user']
-		return this.taskProgressService.applyToCompleteTask(
-			user,
-			projectId,
-			taskId,
-			message
-		)
-	}
-
-	@Post(':projectId/task/:taskId/approve-completion')
-	async approveTaskCompletion(
-		@Param('projectId', IdValidationPipe) projectId: number,
-		@Param('taskId', IdValidationPipe) taskId: number,
-		@Req() req: Request,
-		@Body('creatorId') creatorId: number,
-		@Body('message') message?: string,
-	) {
-		const user = req['user']
-		return this.taskProgressService.approveTaskCompletion(
-			user,
-			projectId,
-			taskId,
-			creatorId,
-			message
-		)
-	}
-
-	// task progress end
 }
