@@ -7,7 +7,6 @@ import {
 	Param,
 	Req,
 	Query,
-	InternalServerErrorException,
 	UsePipes,
 	ValidationPipe
 } from '@nestjs/common'
@@ -26,7 +25,7 @@ import {
 	UpdateProjectDto,
 	UpdateProjectStatusDto
 } from '../dto/project.dto'
-import { ProgressStatus, Project, ProjectStatus, User } from '@prisma/client'
+import { Project, ProjectStatus, User } from '@prisma/client'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
 import { ProjectProgressService } from '../services/project-progress.service'
@@ -115,7 +114,23 @@ export class ProjectController {
 	}
 
 	@Get()
-	@ApiOperation({ summary: 'Получить все проекты с фильтрацией и пагинацией' })
+	@ApiOperation({
+		summary: 'Получить все проекты с фильтрацией и пагинацией'
+	})
+	@ApiQuery({
+		name: 'tags',
+		required: false,
+		type: [String],
+		example: ['tag1', 'tag2']
+	})
+	@ApiQuery({
+		name: 'category',
+		required: false,
+		type: String,
+		example: 'Category Name'
+	})
+	@ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+	@ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
 	@ApiResponse({
 		status: 200,
 		description: 'Список проектов.',
@@ -155,20 +170,6 @@ export class ProjectController {
 			}
 		}
 	})
-	@ApiQuery({
-		name: 'tags',
-		required: false,
-		type: [String],
-		example: ['tag1', 'tag2']
-	})
-	@ApiQuery({
-		name: 'category',
-		required: false,
-		type: String,
-		example: 'Category Name'
-	})
-	@ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-	@ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
 	@PublicRoute()
 	async getAllProjects(
 		@Query('tags') tags?: string[],
@@ -187,6 +188,7 @@ export class ProjectController {
 			parsedLimit
 		)
 	}
+
 	@Get('by-user/:userId')
 	@ApiOperation({
 		summary: 'Получить все проекты пользователя по userId с пагинацией'
@@ -267,10 +269,14 @@ export class ProjectController {
 				price: 2000,
 				tasks: [
 					{
-						id: 1,
-						title: 'Updated Task 1',
-						description: 'Updated description of task 1',
-						price: 1000
+						projectId: 20,
+						taskId: 19,
+						task: {
+							id: 19,
+							title: 'example title of task for validation',
+							description: 'example decription',
+							price: 10
+						}
 					}
 				]
 			}
@@ -289,7 +295,7 @@ export class ProjectController {
 	}
 
 	@Put(':id/status')
-	@ApiOperation({ summary: 'Изменить статус проекта' })
+	@ApiOperation({ summary: 'Обновить статус проекта' })
 	@ApiParam({ name: 'id', description: 'ID проекта' })
 	@ApiBody({ type: UpdateProjectStatusDto })
 	@ApiResponse({
@@ -298,21 +304,12 @@ export class ProjectController {
 		schema: {
 			example: {
 				id: 1,
-				authorId: 1,
-				title: 'Updated Project',
-				description: 'Updated description of the project',
-				bannerUrl: 'http://example.com/banner_updated.png',
-				files: ['file1.png', 'file2.png'],
-				tags: ['updatedTag1', 'updatedTag2'],
-				category: 'Updated Category Name',
-				price: 2000,
-				status: 'published'
+				status: ProjectStatus.published
 			}
 		}
 	})
 	@ApiResponse({ status: 400, description: 'Неверные данные запроса.' })
 	@ApiResponse({ status: 404, description: 'Проект не найден.' })
-	@ApiResponse({ status: 403, description: 'Доступ запрещен.' })
 	async updateProjectStatus(
 		@Param('id') id: string,
 		@Body() updateProjectStatusDto: UpdateProjectStatusDto,
@@ -324,122 +321,6 @@ export class ProjectController {
 			projectId,
 			updateProjectStatusDto.status,
 			user
-		)
-	}
-
-	// Мб для админки пригодится
-	// @Delete(':id')
-	// @ApiOperation({ summary: 'Удалить проект' })
-	// @ApiParam({ name: 'id', description: 'ID проекта' })
-	// @ApiResponse({ status: 200, description: 'Проект успешно удален.' })
-	// @ApiResponse({ status: 404, description: 'Проект не найден.' })
-	// async deleteProject(@Param('id') id: string): Promise<Project> {
-	// 	const projectId = parseInt(id)
-	// 	return this.projectService.deleteProject(projectId)
-	// }
-
-	@Get(':id/files_tg/:tg_id')
-	@ApiOperation({ summary: 'Send project files to Telegram user' })
-	@ApiParam({ name: 'id', description: 'Project ID' })
-	@ApiParam({ name: 'tg_id', description: 'Telegram user ID' })
-	@ApiResponse({
-		status: 200,
-		description: 'Files sent to Telegram successfully.'
-	})
-	@ApiResponse({ status: 404, description: 'Project or files not found.' })
-	@ApiResponse({ status: 500, description: 'Internal server error.' })
-	@PublicRoute()
-	async sendFilesToTelegram(
-		@Param('id') projectId: string,
-		@Param('tg_id') telegramId: string
-	) {
-		try {
-			const parsedProjectId = parseInt(projectId)
-			await this.projectService.sendProjectFilesToTelegram(
-				parsedProjectId,
-				telegramId
-			)
-			return { message: 'Файлы отправлены в Telegram' }
-		} catch (error) {
-			throw new InternalServerErrorException(
-				`Ошибка при отправке файлов в Telegram: ${error}`,
-				error.message
-			)
-		}
-	}
-
-	// @Post(':eventId/confirm-application')
-	// @ApiOperation({ summary: 'Подтвердить или отклонить заявку на проект' })
-	// @ApiParam({ name: 'projectId', description: 'ID проекта', type: 'number' })
-	// @ApiBody({
-	// 	schema: {
-	// 		type: 'object',
-	// 		properties: {
-	// 			isApproved: {
-	// 				type: 'boolean',
-	// 				description: 'Подтверждена ли заявка'
-	// 			}
-	// 		},
-	// 		required: ['isApproved']
-	// 	}
-	// })
-	// @ApiResponse({
-	// 	status: 200,
-	// 	description: 'Заявка успешно подтверждена/отклонена'
-	// })
-	// @ApiResponse({ status: 500, description: 'Ошибка при подтверждении заявки' })
-	// async confirmProjectApplication(
-	// 	@Req() req: Request,
-	// 	@Param('eventId', IdValidationPipe) eventId: number,
-	// 	@Body('isApproved') isApproved: boolean
-	// ): Promise<void> {
-	// 	const user = req['user']
-	// 	await this.projectService.confirmProjectApplication(
-	// 		user,
-	// 		eventId,
-	// 		isApproved
-	// 	)
-	// }
-
-	@ApiOperation({ summary: 'Подать заявку на участие в проекте' })
-	@ApiParam({ name: 'id', type: 'string', description: 'ID проекта' })
-	@ApiResponse({
-		status: 201,
-		description: 'Заявка подана успешно',
-		schema: {
-			example: {
-				id: 20,
-				userId: 7,
-				projectId: 20,
-				status: 'pending',
-				createdAt: '2024-08-16T20:01:22.146Z',
-				updatedAt: '2024-08-16T20:01:22.146Z'
-			}
-		}
-	})
-	@ApiResponse({ status: 401, description: 'Неавторизован' })
-	@Post(':id/apply')
-	async applyToProject(
-		@Param('id') projectId: string,
-		@Req() req: Request,
-		@Body('message') message: string = ''
-	) {
-		const user = req['user']
-		return this.projectProgressService.applyToProject(
-			user,
-			Number(projectId),
-			message
-		)
-	}
-
-	@Get(':projectId/freelancers')
-	async getAllCreatorsByProjectId(
-		@Param('projectId', IdValidationPipe) projectId: number,
-		@Query('status') status: ProgressStatus
-	) {
-		return this.projectProgressService.getAllCreatorsByProjectId(
-			projectId,
-			status
 		)
 	}
 }
