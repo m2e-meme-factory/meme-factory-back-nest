@@ -5,11 +5,11 @@ import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
 
 @ApiTags('task')
 @ApiBearerAuth('access-token')
-@Controller('projects')
+@Controller('tasks')
 export class TaskController {
 	constructor(private readonly taskProgressService: TaskProgressService) {}
 
-	@Post(':projectId/task/:taskId/apply-completion')
+	@Post(':taskId/apply-completion')
 	async applyToCompleteTask(
 		@Param('taskId', IdValidationPipe) taskId: number,
 		@Req() req: Request,
@@ -19,7 +19,7 @@ export class TaskController {
 		return this.taskProgressService.applyToCompleteTask(user, taskId, message)
 	}
 
-	@Post(':projectId/task/:taskId/approve-completion')
+	@Post(':taskId/approve-completion')
 	async approveTaskCompletion(
 		@Param('taskId', IdValidationPipe) taskId: number,
 		@Req() req: Request,

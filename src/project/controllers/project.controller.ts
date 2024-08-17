@@ -419,7 +419,7 @@ export class ProjectController {
 		name: 'creatorId',
 		required: false,
 		type: [String],
-		example: ['1']
+		example: '1'
 	})
 	@ApiResponse({ status: 401, description: 'Неавторизован' })
 	@Get('progress/by-project/:projectId')
