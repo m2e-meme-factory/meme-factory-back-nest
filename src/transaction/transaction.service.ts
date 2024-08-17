@@ -6,6 +6,7 @@ import {
 } from './dto/transaction.dto'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { UserService } from 'src/user/user.service'
+import { Decimal } from '@prisma/client/runtime/library'
 
 @Injectable()
 export class TransactionService {
@@ -16,7 +17,7 @@ export class TransactionService {
 
 	async createTransaction(
 		data: CreateTransactionDto
-	): Promise<{ transaction: Transaction; newBalance: number }> {
+	): Promise<{ transaction: Transaction; newBalance: Decimal }> {
 		const updatedBalance = await this.userService.updateUserBalanceByUserId(
 			data.toUserId,
 			data.amount

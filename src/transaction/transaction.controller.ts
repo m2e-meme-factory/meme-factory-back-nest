@@ -4,6 +4,7 @@ import { Transaction } from '@prisma/client'
 import { CreateTransactionDto, UpdateTransactionDto } from './dto/transaction.dto'
 import { TransactionService } from './transaction.service';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Decimal } from '@prisma/client/runtime/library';
 
 @ApiTags('transactions')
 @Controller('transactions')
@@ -13,7 +14,7 @@ export class TransactionController {
 	@Post()
 	async create(
 		@Body() createTransactionDto: CreateTransactionDto
-	): Promise<{transaction: Transaction, newBalance: number}> {
+	): Promise<{transaction: Transaction, newBalance: Decimal}> {
 		return this.transactionService.createTransaction(createTransactionDto)
 	}
 
