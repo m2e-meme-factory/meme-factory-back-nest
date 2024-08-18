@@ -25,7 +25,7 @@ import {
 	UpdateProjectDto,
 	UpdateProjectStatusDto
 } from '../dto/project.dto'
-import { Project, ProjectStatus, User } from '@prisma/client'
+import { ProgressStatus, Project, ProjectStatus, User } from '@prisma/client'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
 import { ProjectProgressService } from '../services/project-progress.service'
@@ -292,6 +292,74 @@ export class ProjectController {
 		const projectId = parseInt(id)
 		const user: User = req['user']
 		return this.projectService.updateProject(projectId, updateProjectDto, user)
+	}
+
+	@Get(':projectId/freelancers')
+	@ApiResponse({
+		status: 200,
+		description: 'Данные о фрилансерах успешно получены',
+		schema: {
+			type: 'array',
+			items: {
+				type: 'object',
+				properties: {
+					user: {
+						type: 'object',
+						properties: {
+							id: { type: 'number', example: 7 },
+							telegramId: { type: 'string', example: '631855340' },
+							username: { type: 'string', nullable: true, example: null },
+							isBaned: { type: 'boolean', example: false },
+							isVerified: { type: 'boolean', example: false },
+							createdAt: {
+								type: 'string',
+								format: 'date-time',
+								example: '2024-08-09T15:17:13.451Z'
+							},
+							inviterRefCode: {
+								type: 'string',
+								nullable: true,
+								example: null
+							},
+							refCode: {
+								type: 'string',
+								example: 'cd3b7d08-594e-427e-9545-8daeb15ddeb4'
+							},
+							role: { type: 'string', example: 'advertiser' },
+							balance: { type: 'string', example: '10' }
+						}
+					},
+					progress: {
+						type: 'object',
+						properties: {
+							id: { type: 'number', example: 20 },
+							projectId: { type: 'number', example: 20 },
+							status: { type: 'string', example: 'accepted' },
+							createdAt: {
+								type: 'string',
+								format: 'date-time',
+								example: '2024-08-16T20:01:22.146Z'
+							},
+							updatedAt: {
+								type: 'string',
+								format: 'date-time',
+								example: '2024-08-16T20:10:33.159Z'
+							}
+						}
+					}
+				}
+			}
+		}
+	})
+	@PublicRoute()
+	async getAllCreatorsByProjectId(
+		@Param('projectId', IdValidationPipe) projectId: number,
+		@Query('status') status: ProgressStatus
+	) {
+		return this.projectProgressService.getAllCreatorsByProjectId(
+			projectId,
+			status
+		)
 	}
 
 	@Put(':id/status')
