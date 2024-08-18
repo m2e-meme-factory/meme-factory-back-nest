@@ -8,7 +8,8 @@ import {
 	Req,
 	Query,
 	UsePipes,
-	ValidationPipe
+	ValidationPipe,
+	InternalServerErrorException
 } from '@nestjs/common'
 import {
 	ApiTags,
@@ -248,7 +249,68 @@ export class ProjectController {
 			Number(limit)
 		)
 	}
+	@Get(':id/files_tg/:tg_id')
+	@ApiOperation({ summary: 'Send project files to Telegram user' })
+	@ApiParam({ name: 'id', description: 'Project ID' })
+	@ApiParam({ name: 'tg_id', description: 'Telegram user ID' })
+	@ApiResponse({
+		status: 200,
+		description: 'Files sent to Telegram successfully.'
+	})
+	@ApiResponse({ status: 404, description: 'Project or files not found.' })
+	@ApiResponse({ status: 500, description: 'Internal server error.' })
+	@PublicRoute()
+	async sendFilesToTelegram(
+		@Param('id') projectId: string,
+		@Param('tg_id') telegramId: string
+	) {
+		try {
+			const parsedProjectId = parseInt(projectId)
+			await this.projectService.sendProjectFilesToTelegram(
+				parsedProjectId,
+				telegramId
+			)
+			return { message: 'Файлы отправлены в Telegram' }
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при отправке файлов в Telegram: ${error}`,
+				error.message
+			)
+		}
+	}
 
+	@ApiOperation({ summary: 'Подать заявку на участие в проекте' })
+	@ApiParam({ name: 'id', type: 'string', description: 'ID проекта' })
+	@ApiResponse({
+		status: 201,
+		description: 'Заявка подана успешно',
+		schema: {
+			example: {
+				id: 20,
+				userId: 7,
+				projectId: 20,
+				status: 'pending',
+				createdAt: '2024-08-16T20:01:22.146Z',
+				updatedAt: '2024-08-16T20:01:22.146Z'
+			}
+		}
+	})
+	@ApiResponse({ status: 401, description: 'Неавторизован' })
+	@Post(':id/apply')
+	async applyToProject(
+		@Param('id') projectId: string,
+		@Req() req: Request,
+		@Body('message') message: string = ''
+	) {
+		const user = req['user']
+		return this.projectProgressService.applyToProject(
+			user,
+			Number(projectId),
+			message
+		)
+	}
+
+	
 	@Put(':id')
 	@ApiOperation({ summary: 'Обновить проект' })
 	@ApiParam({ name: 'id', description: 'ID проекта' })
