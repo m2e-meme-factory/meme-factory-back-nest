@@ -96,40 +96,46 @@ export class TaskProgressService {
 		creatorId: number,
 		message?: string
 	) {
-		checkUserRole(user, UserRole.advertiser)
+		checkUserRole(user, UserRole.advertiser);
 		try {
 			return await this.prisma.$transaction(async prisma => {
-				const task = await prisma.task.findFirst({ where: { id: taskId } })
+				const task = await prisma.task.findFirst({ where: { id: taskId } });
 				if (!task) {
-					throw new NotFoundException(`Задача с ID ${taskId} не найдена`)
+					throw new NotFoundException(`Задача с ID ${taskId} не найдена`);
 				}
-
+	
 				const projectTask = await prisma.projectTask.findFirst({
 					where: { taskId: taskId }
-				})
+				});
 				if (!projectTask) {
-					throw new NotFoundException(`Проект задачи с ID ${taskId} не найден`)
+					throw new NotFoundException(`Проект задачи с ID ${taskId} не найден`);
 				}
-
-				const transaction = await this.transactionService.createTransaction({
-					amount: task.price,
-					fromUserId: user.id,
-					toUserId: creatorId,
-					taskId: taskId,
-					projectId: projectTask.projectId
-				})
-
+	
+				const advertiser = await prisma.user.findFirst({ where: { id: user.id } });
+				if (advertiser.balance < task.price) {
+					throw new ConflictException('Недостаточно средств для завершения задачи');
+				}
+	
 				const existingProgress = await prisma.progressProject.findFirst({
 					where: {
 						projectId: projectTask.projectId,
 						userId: creatorId,
 						status: ProgressStatus.accepted
 					}
-				})
-
+				});
+	
 				if (!existingProgress) {
-					throw new NotFoundException('Прогресс проекта не найден')
+					throw new NotFoundException('Прогресс проекта не найден');
 				}
+	
+				const transaction = await this.transactionService.createTransaction({
+					amount: task.price,
+					fromUserId: user.id,
+					toUserId: creatorId,
+					taskId: taskId,
+					projectId: projectTask.projectId
+				});
+	
 				const event = await this.eventService.createEvent({
 					userId: user.id,
 					projectId: projectTask.projectId,
@@ -139,18 +145,21 @@ export class TaskProgressService {
 					message: message,
 					progressProjectId: existingProgress.id,
 					details: {
-						taskId: taskId
+						taskId: taskId,
+						transactionId: transaction.transaction.id,
+						amount: transaction.transaction.amount
 					}
-				})
-
-				return { event: event, transaction: transaction }
-			})
+				});
+	
+				return { event: event, transaction: transaction };
+			});
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при одобрении завершения задачи: ${error.message}`
-			)
+			);
 		}
 	}
+	
 
 	async rejectTaskCompletion(
 		user: User,
