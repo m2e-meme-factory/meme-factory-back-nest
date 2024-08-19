@@ -41,20 +41,31 @@ export class TaskProgressService {
 			})
 
 			if (!existingProgress) {
-				throw new ConflictException(
-					'Заявка на проект не подана или не одобрена'
-				)
+				throw new ConflictException('Заявка на проект не подана')
 			}
 
-			if (
-				existingProgress.events.some(item => {
-					const details = item.details as IDetails | undefined
-					return (
-						details?.taskId === taskId &&
-						item.eventType === EventType.TASK_SUBMIT
-					)
-				})
-			) {
+			const hasSubmitted = existingProgress.events.some((item, index) => {
+				const details = item.details as IDetails | undefined
+				if (
+					details?.taskId === taskId &&
+					item.eventType === EventType.TASK_SUBMIT
+				) {
+					for (let i = index + 1; i < existingProgress.events.length; i++) {
+						const nextEvent = existingProgress.events[i]
+						const nextDetails = nextEvent.details as IDetails | undefined
+						if (
+							nextDetails?.taskId === taskId &&
+							nextEvent.eventType === EventType.TASK_REJECTED
+						) {
+							return false
+						}
+					}
+					return true
+				}
+				return false
+			})
+
+			if (hasSubmitted) {
 				throw new ConflictException('Заявка на задание уже подана')
 			}
 
