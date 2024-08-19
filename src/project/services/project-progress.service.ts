@@ -19,12 +19,26 @@ export class ProjectProgressService {
 	async applyToProject(user: User, projectId: number, message: string = '') {
 		checkUserRole(user, UserRole.creator)
 		try {
-			const progressProject = await this.prisma.progressProject.create({
-				data: {
+			let progressProject = await this.prisma.progressProject.findFirst({
+				where: {
 					userId: user.id,
 					projectId
 				}
 			})
+
+			if (
+				progressProject.status === ProgressStatus.rejected ||
+				!progressProject
+			) {
+				progressProject = await this.prisma.progressProject.create({
+					data: {
+						userId: user.id,
+						projectId
+					}
+				})
+			} else {
+				throw new Error('Заявка на проект уже подана')
+			}
 
 			await this.eventService.createEvent({
 				userId: user.id,
