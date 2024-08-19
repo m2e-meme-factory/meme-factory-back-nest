@@ -97,37 +97,38 @@ export class TaskProgressService {
 		message?: string
 	) {
 		checkUserRole(user, UserRole.advertiser);
+		
+		const task = await this.prisma.task.findFirst({ where: { id: taskId } });
+		if (!task) {
+			throw new NotFoundException(`Задача с ID ${taskId} не найдена`);
+		}
+	
+		const projectTask = await this.prisma.projectTask.findFirst({
+			where: { taskId: taskId }
+		});
+		if (!projectTask) {
+			throw new NotFoundException(`Проект задачи с ID ${taskId} не найден`);
+		}
+	
+		const advertiser = await this.prisma.user.findFirst({ where: { id: user.id } });
+		if (advertiser.balance < task.price) {
+			throw new ConflictException('Недостаточно средств для завершения задачи');
+		}
+	
+		const existingProgress = await this.prisma.progressProject.findFirst({
+			where: {
+				projectId: projectTask.projectId,
+				userId: creatorId,
+				status: ProgressStatus.accepted
+			}
+		});
+	
+		if (!existingProgress) {
+			throw new NotFoundException('Прогресс проекта не найден');
+		}
+	
 		try {
-			return await this.prisma.$transaction(async prisma => {
-				const task = await prisma.task.findFirst({ where: { id: taskId } });
-				if (!task) {
-					throw new NotFoundException(`Задача с ID ${taskId} не найдена`);
-				}
-	
-				const projectTask = await prisma.projectTask.findFirst({
-					where: { taskId: taskId }
-				});
-				if (!projectTask) {
-					throw new NotFoundException(`Проект задачи с ID ${taskId} не найден`);
-				}
-	
-				const advertiser = await prisma.user.findFirst({ where: { id: user.id } });
-				if (advertiser.balance < task.price) {
-					throw new ConflictException('Недостаточно средств для завершения задачи');
-				}
-	
-				const existingProgress = await prisma.progressProject.findFirst({
-					where: {
-						projectId: projectTask.projectId,
-						userId: creatorId,
-						status: ProgressStatus.accepted
-					}
-				});
-	
-				if (!existingProgress) {
-					throw new NotFoundException('Прогресс проекта не найден');
-				}
-	
+			return await this.prisma.$transaction(async () => {
 				const transaction = await this.transactionService.createTransaction({
 					amount: task.price,
 					fromUserId: user.id,
@@ -159,6 +160,7 @@ export class TaskProgressService {
 			);
 		}
 	}
+	
 	
 
 	async rejectTaskCompletion(
