@@ -19,18 +19,17 @@ export class TransactionService {
 		data: CreateTransactionDto
 	): Promise<{ transaction: Transaction; newBalance: Decimal }> {
 		return this.prisma.$transaction(async prisma => {
+			await this.userService.updateUserBalanceByUserId(
+				data.fromUserId,
+				data.amount,
+				false
+			)
 			const updatedСreatorBalance =
 				await this.userService.updateUserBalanceByUserId(
 					data.toUserId,
 					data.amount,
 					true
 				)
-
-			await this.userService.updateUserBalanceByUserId(
-				data.fromUserId,
-				data.amount,
-				false
-			)
 
 			const transaction = await prisma.transaction.create({ data })
 
