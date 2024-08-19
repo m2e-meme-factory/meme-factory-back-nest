@@ -26,18 +26,24 @@ export class ProjectProgressService {
 				}
 			})
 
-			if (
-				progressProject.status === ProgressStatus.rejected ||
-				!progressProject
-			) {
+			if (progressProject.status === ProgressStatus.rejected) {
+				progressProject = await this.prisma.progressProject.update({
+					where: {
+						id: progressProject.id
+					},
+					data: {
+						status: ProgressStatus.pending
+					}
+				})
+			}
+
+			if (!progressProject) {
 				progressProject = await this.prisma.progressProject.create({
 					data: {
 						userId: user.id,
 						projectId
 					}
 				})
-			} else {
-				throw new Error('Заявка на проект уже подана')
 			}
 
 			await this.eventService.createEvent({
