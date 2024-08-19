@@ -112,7 +112,7 @@ export class TaskProgressService {
 	
 		const advertiser = await this.prisma.user.findFirst({ where: { id: user.id } });
 		if (advertiser.balance < task.price) {
-			throw new ConflictException('Недостаточно средств для завершения задачи');
+			throw new Error('Недостаточно средств для завершения задачи');
 		}
 	
 		const existingProgress = await this.prisma.progressProject.findFirst({
