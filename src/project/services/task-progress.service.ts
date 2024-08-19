@@ -17,14 +17,10 @@ export class TaskProgressService {
 	constructor(
 		private prisma: PrismaService,
 		private eventService: EventService,
-		private transactionService: TransactionService,
+		private transactionService: TransactionService
 	) {}
 
-	async applyToCompleteTask(
-		user: User,
-		taskId: number,
-		message?: string
-	) {
+	async applyToCompleteTask(user: User, taskId: number, message?: string) {
 		checkUserRole(user, UserRole.creator)
 
 		try {
@@ -104,15 +100,13 @@ export class TaskProgressService {
 					throw new NotFoundException(`Проект задачи с ID ${taskId} не найден`)
 				}
 
-				const transaction = await this.transactionService.createTransaction(
-					{
-						amount: task.price,
-						fromUserId: user.id,
-						toUserId: creatorId,
-						taskId: taskId,
-						projectId: projectTask.projectId
-					}
-				)
+				const transaction = await this.transactionService.createTransaction({
+					amount: task.price,
+					fromUserId: user.id,
+					toUserId: creatorId,
+					taskId: taskId,
+					projectId: projectTask.projectId
+				})
 
 				const existingProgress = await prisma.progressProject.findFirst({
 					where: {
@@ -143,6 +137,61 @@ export class TaskProgressService {
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при одобрении завершения задачи: ${error.message}`
+			)
+		}
+	}
+
+	async rejectTaskCompletion(
+		user: User,
+		taskId: number,
+		creatorId: number,
+		message?: string
+	) {
+		checkUserRole(user, UserRole.advertiser)
+		try {
+			return await this.prisma.$transaction(async prisma => {
+				const task = await prisma.task.findFirst({ where: { id: taskId } })
+				if (!task) {
+					throw new NotFoundException(`Задача с ID ${taskId} не найдена`)
+				}
+
+				const projectTask = await prisma.projectTask.findFirst({
+					where: { taskId: taskId }
+				})
+				if (!projectTask) {
+					throw new NotFoundException(`Проект задачи с ID ${taskId} не найден`)
+				}
+
+				const existingProgress = await prisma.progressProject.findFirst({
+					where: {
+						projectId: projectTask.projectId,
+						userId: creatorId,
+						status: ProgressStatus.accepted
+					}
+				})
+
+				if (!existingProgress) {
+					throw new NotFoundException('Прогресс проекта не найден')
+				}
+
+				const event = await this.eventService.createEvent({
+					userId: user.id,
+					projectId: projectTask.projectId,
+					role: user.role,
+					eventType: EventType.TASK_REJECTED,
+					description: 'Завершение задачи отклонено.',
+					message: message,
+					progressProjectId: existingProgress.id,
+					details: {
+						taskId: taskId
+					}
+				})
+
+				return { event: event }
+			})
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при отклонении завершения задачи: ${error.message}`
 			)
 		}
 	}

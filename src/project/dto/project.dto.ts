@@ -1,7 +1,5 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger'
-import {
-	ProjectStatus,
-} from '@prisma/client'
+import { ProjectStatus } from '@prisma/client'
 import {
 	IsArray,
 	IsInt,
@@ -101,4 +99,21 @@ export class RespondTaskDto {
 	@IsNotEmpty()
 	@ApiProperty({ example: 1 })
 	taskId: number
+}
+
+export class RejectTaskCompletionDto {
+	@ApiProperty({
+		description: 'ID пользователя, создавшего задачу',
+		example: 1
+	})
+	@IsNumber()
+	creatorId: number
+
+	@ApiProperty({
+		description: 'Сообщение с причиной отклонения',
+		example: 'Задача выполнена неверно.',
+		required: false
+	})
+	@IsString()
+	message?: string
 }
