@@ -35,7 +35,7 @@ export class TaskProgressService {
 				where: {
 					userId: user.id,
 					projectId: projectTask.projectId,
-					status: { in: [ProgressStatus.accepted] }
+					status: { in: [ProgressStatus.accepted, ProgressStatus.pending] }
 				},
 				include: { events: true }
 			})
