@@ -206,22 +206,38 @@ export class UserService {
 		}
 	}
 
-	async updateUserBalanceByUserId(userId: number, amountToAdd: Decimal) {
+	async updateUserBalanceByUserId(
+		userId: number,
+		amount: Decimal,
+		isAdd: boolean = true
+	) {
 		try {
-			const user = await this.prisma.user.update({
+			const user = await this.prisma.user.findUnique({
 				where: { id: userId },
-				data: {
-					balance: {
-						increment: amountToAdd
-					}
-				},
-				select: {
-					balance: true
-				}
+				select: { balance: true }
 			})
 
-			return user.balance
+			if (!user) {
+				throw new NotFoundException(`User с ID ${userId} не найден`)
+			}
+
+			if (!isAdd && user.balance.lessThan(amount)) {
+				throw new Error('Недостаточно средств')
+			}
+
+			const updatedUser = await this.prisma.user.update({
+				where: { id: userId },
+				data: {
+					balance: isAdd ? { increment: amount } : { decrement: amount }
+				},
+				select: { balance: true }
+			})
+
+			return updatedUser.balance
 		} catch (error) {
+			if (error.message === 'Недостаточно средств') {
+				throw new Error(error.message)
+			}
 			throw new NotFoundException(`User с ID ${userId} не найден`)
 		}
 	}

@@ -18,12 +18,24 @@ export class TransactionService {
 	async createTransaction(
 		data: CreateTransactionDto
 	): Promise<{ transaction: Transaction; newBalance: Decimal }> {
-		const updatedBalance = await this.userService.updateUserBalanceByUserId(
-			data.toUserId,
-			data.amount
-		)
-		const transaction = await this.prisma.transaction.create({ data })
-		return { transaction: transaction, newBalance: updatedBalance }
+		return this.prisma.$transaction(async prisma => {
+			const updatedСreatorBalance =
+				await this.userService.updateUserBalanceByUserId(
+					data.toUserId,
+					data.amount,
+					true
+				)
+
+			await this.userService.updateUserBalanceByUserId(
+				data.fromUserId,
+				data.amount,
+				false
+			)
+
+			const transaction = await prisma.transaction.create({ data })
+
+			return { transaction, newBalance: updatedСreatorBalance }
+		})
 	}
 
 	async findAll(): Promise<Transaction[]> {
