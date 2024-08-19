@@ -2,19 +2,14 @@ import {
 	Injectable,
 	NotFoundException,
 	InternalServerErrorException,
-	ForbiddenException,
 } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
-import {
-	Prisma,
-	Project,
-	ProjectStatus,
-	User,
-	UserRole
-} from '@prisma/client'
+import { Prisma, Project, ProjectStatus, User, UserRole } from '@prisma/client'
 import { CreateProjectDto, UpdateProjectDto } from '../dto/project.dto'
 import { TelegramUpdate } from 'src/telegram/telegram.update'
 import { EventService } from 'src/event/event.service'
+import { IDetails } from '../types/project.types'
+import { checkProjectOwnership, checkUserRole } from '../project.utils'
 
 @Injectable()
 export class ProjectService {
@@ -24,31 +19,12 @@ export class ProjectService {
 		private readonly eventService: EventService
 	) {}
 
-	private checkUserRole(user: User) {
-		if (user.role !== UserRole.advertiser) {
-			throw new ForbiddenException(
-				'Only users with role advertiser can perform this action'
-			)
-		}
-	}
-
-	private async checkProjectOwnership(projectId: number, userId: number) {
-		const project = await this.prisma.project.findUnique({
-			where: { id: projectId }
-		})
-		if (!project) {
-			throw new NotFoundException(`Project with ID ${projectId} not found`)
-		}
-		if (project.authorId !== userId) {
-			throw new ForbiddenException('You can only modify your own projects')
-		}
-	}
 
 	async createProject(
 		createProjectDto: CreateProjectDto,
 		user: User
 	): Promise<Project> {
-		this.checkUserRole(user)
+		await checkUserRole(user, UserRole.advertiser)
 		const {
 			title,
 			description,
@@ -163,7 +139,7 @@ export class ProjectService {
 				skip,
 				take,
 				orderBy: {
-					id: "desc"
+					id: 'desc'
 				}
 			})
 
@@ -210,8 +186,8 @@ export class ProjectService {
 		updateProjectDto: UpdateProjectDto,
 		user: User
 	): Promise<Project> {
-		this.checkUserRole(user)
-		this.checkProjectOwnership(id, user.id)
+		await checkUserRole(user, UserRole.advertiser)
+		await checkProjectOwnership(id, user.id)
 		const {
 			title,
 			description,
@@ -357,8 +333,8 @@ export class ProjectService {
 		status: ProjectStatus,
 		user: User
 	): Promise<Project> {
-		this.checkUserRole(user)
-		await this.checkProjectOwnership(id, user.id)
+		await checkUserRole(user, UserRole.advertiser)
+		await checkProjectOwnership(id, user.id)
 
 		try {
 			const project = await this.prisma.project.update({
@@ -373,10 +349,6 @@ export class ProjectService {
 			)
 		}
 	}
-
-	
-
-
 
 	// async respondToTask(user: User, taskId: number) {
 	// 	try {
@@ -405,7 +377,6 @@ export class ProjectService {
 	// 		)
 	// 	}
 	// }
-
 
 	// async confirmTaskCompletion(
 	// 	user: User,
@@ -508,8 +479,39 @@ export class ProjectService {
 			? (project.files as string[])
 			: JSON.parse(project.files as any)
 
+		await this.telegramUpdate.sendFilesToUser(telegramId, files, project.title)
+	}
 
-		
-		await this.telegramUpdate.sendFilesToUser(telegramId, files, project.title);
-	  }
+	async calculateTotalProjectCost(user: User, projectId: number): Promise<number> {
+		try {
+			await checkUserRole(user, UserRole.advertiser)
+			await checkProjectOwnership(projectId, user.id)
+			const projectProgressList = await this.prisma.progressProject.findMany({
+				where: { projectId },
+				include: { events: true }
+			})
+
+			
+			let totalAmount = 0
+
+			projectProgressList.forEach(progress => {
+				const completedTasks = progress.events.filter(
+					event => event.eventType === 'TASK_COMPLETED'
+				)
+
+				completedTasks.forEach(event => {
+					const { amount } = event.details as IDetails
+					if (amount) {
+						totalAmount += amount
+					}
+				})
+			})
+
+			return totalAmount
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при вычислении затрат на проект: ${error.message}`
+			)
+		}
+	}
 }

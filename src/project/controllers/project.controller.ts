@@ -310,6 +310,30 @@ export class ProjectController {
 		)
 	}
 
+	@Get(':projectId/cost')
+	@ApiOperation({ summary: 'Получить общие затраты на проект' })
+	@ApiParam({ name: 'projectId', type: Number, description: 'ID проекта' })
+	@ApiResponse({
+	  status: 200,
+	  description: 'Общие затраты на проект успешно получены.',
+	  schema: {
+		example: 15000
+	  }
+	})
+	@ApiResponse({
+	  status: 404,
+	  description: 'Проект не найден.'
+	})
+	@ApiResponse({
+	  status: 500,
+	  description: 'Ошибка при вычислении затрат на проект.'
+	})
+	async calculateTotalProjectCost(@Req() req: Request, @Param('projectId', IdValidationPipe) projectId: number): Promise<number> {
+		const user = req["user"]
+		return await this.projectService.calculateTotalProjectCost(user,projectId);
+
+	}
+
 	
 	@Put(':id')
 	@ApiOperation({ summary: 'Обновить проект' })
