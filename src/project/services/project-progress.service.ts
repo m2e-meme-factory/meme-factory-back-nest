@@ -51,7 +51,7 @@ export class ProjectProgressService {
 	) {
 		return await this.prisma.progressProject.findMany({
 			where: { projectId, ...(creatorId && { userId: creatorId }) },
-			include: { events: true }
+			include: { events: true, user: true }
 		})
 	}
 
