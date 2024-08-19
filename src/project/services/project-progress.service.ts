@@ -25,7 +25,16 @@ export class ProjectProgressService {
 					projectId
 				}
 			})
-
+			
+			if (!progressProject) {
+				progressProject = await this.prisma.progressProject.create({
+					data: {
+						userId: user.id,
+						projectId
+					}
+				})
+			}
+			
 			if (progressProject.status === ProgressStatus.rejected) {
 				progressProject = await this.prisma.progressProject.update({
 					where: {
@@ -37,14 +46,6 @@ export class ProjectProgressService {
 				})
 			}
 
-			if (!progressProject) {
-				progressProject = await this.prisma.progressProject.create({
-					data: {
-						userId: user.id,
-						projectId
-					}
-				})
-			}
 
 			await this.eventService.createEvent({
 				userId: user.id,
