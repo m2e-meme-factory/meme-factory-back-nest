@@ -10,12 +10,14 @@ import { EventService } from 'src/event/event.service'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { checkUserRole } from '../project.utils'
 import { IDetails } from '../types/project.types'
+import { TransactionService } from 'src/transaction/transaction.service'
 
 @Injectable()
 export class TaskProgressService {
 	constructor(
 		private prisma: PrismaService,
-		private eventService: EventService
+		private eventService: EventService,
+		private transactionService: TransactionService,
 	) {}
 
 	async applyToCompleteTask(
@@ -102,15 +104,15 @@ export class TaskProgressService {
 					throw new NotFoundException(`Проект задачи с ID ${taskId} не найден`)
 				}
 
-				const transaction = await prisma.transaction.create({
-					data: {
+				const transaction = await this.transactionService.createTransaction(
+					{
 						amount: task.price,
 						fromUserId: user.id,
 						toUserId: creatorId,
 						taskId: taskId,
 						projectId: projectTask.projectId
 					}
-				})
+				)
 
 				const existingProgress = await prisma.progressProject.findFirst({
 					where: {

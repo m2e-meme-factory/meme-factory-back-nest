@@ -8,6 +8,7 @@ import { PrismaService } from 'src/prisma/prisma.service'
 import { v4 as uuidv4 } from 'uuid'
 import { IUser } from './types/user.types'
 import { User, UserRole } from '@prisma/client'
+import { Decimal } from '@prisma/client/runtime/library'
 
 @Injectable()
 export class UserService {
@@ -205,7 +206,7 @@ export class UserService {
 		}
 	}
 
-	async updateUserBalanceByUserId(userId: number, amountToAdd: number) {
+	async updateUserBalanceByUserId(userId: number, amountToAdd: Decimal) {
 		try {
 			const user = await this.prisma.user.update({
 				where: { id: userId },
