@@ -167,7 +167,7 @@ export class TaskProgressService {
 			})
 		} catch (error) {
 			throw new InternalServerErrorException(
-				`Ошибка при одобрении завершения задачи: ${error.message}`
+				`Ошибка при одобрении завершения задачи: ${error}`
 			)
 		}
 	}
