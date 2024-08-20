@@ -76,29 +76,30 @@ export class ProjectProgressService {
 		  include: { events: true, user: true },
 		});
 	  
-		return progressProjects.map(progressProject => {
+		return progressProjects.map((progressProject) => {
 		  const tasksStatus = progressProject.events.reduce(
 			(acc, event) => {
-				let {taskId} = event.details as IDetails
-			  if (taskId) {
-				taskId = taskId;
+			  if (event.details) {
+				const { taskId } = event.details as IDetails;
 	  
-				switch (event.eventType) {
-				  case 'TASK_COMPLETED':
-					acc.approvedTasks.add(taskId);
-					acc.appliedTasks.delete(taskId);
-					acc.rejectedTasks.delete(taskId);
-					break;
-				  case 'TASK_SUBMIT':
-					acc.appliedTasks.add(taskId);
-					acc.rejectedTasks.delete(taskId);
-					break;
-				  case 'TASK_REJECTED':
-					if (acc.appliedTasks.has(taskId)) {
-					  acc.rejectedTasks.add(taskId);
+				if (taskId !== undefined) {
+				  switch (event.eventType) {
+					case 'TASK_COMPLETED':
+					  acc.approvedTasks.add(taskId);
 					  acc.appliedTasks.delete(taskId);
-					}
-					break;
+					  acc.rejectedTasks.delete(taskId);
+					  break;
+					case 'TASK_SUBMIT':
+					  acc.appliedTasks.add(taskId);
+					  acc.rejectedTasks.delete(taskId);
+					  break;
+					case 'TASK_REJECTED':
+					  if (acc.appliedTasks.has(taskId)) {
+						acc.rejectedTasks.add(taskId);
+						acc.appliedTasks.delete(taskId);
+					  }
+					  break;
+				  }
 				}
 			  }
 			  return acc;
@@ -118,6 +119,7 @@ export class ProjectProgressService {
 		  };
 		});
 	  }
+	  
 	  
 
 	async getAllProjectByCreatorId(creatorId: number) {
