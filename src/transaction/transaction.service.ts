@@ -55,6 +55,10 @@ export class TransactionService {
 		return this.prisma.transaction.findMany({
 			where: {
 				OR: [{ fromUserId: userId }, { toUserId: userId }]
+			},
+			include: {
+				toUser: true,
+				fromUser: true
 			}
 		})
 	}

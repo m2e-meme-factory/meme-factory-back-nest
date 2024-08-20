@@ -11,13 +11,15 @@ import { PrismaService } from 'src/prisma/prisma.service'
 import { checkUserRole } from '../project.utils'
 import { IDetails } from '../types/project.types'
 import { TransactionService } from 'src/transaction/transaction.service'
+import { ProjectProgressService } from './project-progress.service'
 
 @Injectable()
 export class TaskProgressService {
 	constructor(
 		private prisma: PrismaService,
 		private eventService: EventService,
-		private transactionService: TransactionService
+		private transactionService: TransactionService,
+		private projectProgressService: ProjectProgressService
 	) {}
 
 	async applyToCompleteTask(user: User, taskId: number, message?: string) {
@@ -96,37 +98,39 @@ export class TaskProgressService {
 		creatorId: number,
 		message?: string
 	) {
-		checkUserRole(user, UserRole.advertiser);
-		
-		const task = await this.prisma.task.findFirst({ where: { id: taskId } });
+		checkUserRole(user, UserRole.advertiser)
+
+		const task = await this.prisma.task.findFirst({ where: { id: taskId } })
 		if (!task) {
-			throw new NotFoundException(`Задача с ID ${taskId} не найдена`);
+			throw new NotFoundException(`Задача с ID ${taskId} не найдена`)
 		}
-	
+
 		const projectTask = await this.prisma.projectTask.findFirst({
 			where: { taskId: taskId }
-		});
+		})
 		if (!projectTask) {
-			throw new NotFoundException(`Проект задачи с ID ${taskId} не найден`);
+			throw new NotFoundException(`Проект задачи с ID ${taskId} не найден`)
 		}
-	
-		const advertiser = await this.prisma.user.findFirst({ where: { id: user.id } });
+
+		const advertiser = await this.prisma.user.findFirst({
+			where: { id: user.id }
+		})
 		if (advertiser.balance < task.price) {
-			throw new Error('Недостаточно средств для завершения задачи');
+			throw new Error('Недостаточно средств для завершения задачи')
 		}
-	
+
 		const existingProgress = await this.prisma.progressProject.findFirst({
 			where: {
 				projectId: projectTask.projectId,
 				userId: creatorId,
-				status: ProgressStatus.accepted
+				status: { in: [ProgressStatus.accepted, ProgressStatus.pending] }
 			}
-		});
-	
+		})
+
 		if (!existingProgress) {
-			throw new NotFoundException('Прогресс проекта не найден');
+			throw new NotFoundException('Прогресс проекта не найден')
 		}
-	
+
 		try {
 			return await this.prisma.$transaction(async () => {
 				const transaction = await this.transactionService.createTransaction({
@@ -135,8 +139,8 @@ export class TaskProgressService {
 					toUserId: creatorId,
 					taskId: taskId,
 					projectId: projectTask.projectId
-				});
-	
+				})
+
 				const event = await this.eventService.createEvent({
 					userId: user.id,
 					projectId: projectTask.projectId,
@@ -150,18 +154,23 @@ export class TaskProgressService {
 						transactionId: transaction.transaction.id,
 						amount: transaction.transaction.amount
 					}
-				});
-	
-				return { event: event, transaction: transaction };
-			});
+				})
+
+				await this.projectProgressService.updateProjectProgressStatus(
+					user,
+					existingProgress.id,
+					ProgressStatus.accepted,
+					'Автоматическое принятие заявки на проект после принятия задачи'
+				)
+
+				return { event: event, transaction: transaction }
+			})
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при одобрении завершения задачи: ${error.message}`
-			);
+			)
 		}
 	}
-	
-	
 
 	async rejectTaskCompletion(
 		user: User,

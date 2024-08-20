@@ -96,25 +96,64 @@ export class TransactionController {
 		status: 200,
 		description: 'Список транзакций пользователя',
 		schema: {
-			type: 'array',
-			items: {
+		  type: 'array',
+		  items: {
+			type: 'object',
+			properties: {
+			  id: { type: 'number', example: 1 },
+			  projectId: { type: 'number', example: 2 },
+			  taskId: { type: 'number', example: 2 },
+			  fromUserId: { type: 'number', example: 1 },
+			  toUserId: { type: 'number', example: 2 },
+			  amount: { type: 'string', example: '1000' },
+			  createdAt: {
+				type: 'string',
+				format: 'date-time',
+				example: '2024-08-20T17:21:27.640Z'
+			  },
+			  toUser: {
 				type: 'object',
 				properties: {
-					id: { type: 'number', example: 1 },
-					projectId: { type: 'number', example: 1 },
-					taskId: { type: 'number', example: 1 },
-					fromUserId: { type: 'number', example: 1 },
-					toUserId: { type: 'number', example: 2 },
-					amount: { type: 'number', example: 100.0 },
-					createdAt: {
-						type: 'string',
-						format: 'date-time',
-						example: '2024-08-16T20:01:22.146Z'
-					}
+				  id: { type: 'number', example: 2 },
+				  telegramId: { type: 'string', example: '5284205318' },
+				  username: { type: 'string', example: 'mmd446' },
+				  isBaned: { type: 'boolean', example: false },
+				  isVerified: { type: 'boolean', example: false },
+				  createdAt: {
+					type: 'string',
+					format: 'date-time',
+					example: '2024-08-20T17:11:13.467Z'
+				  },
+				  inviterRefCode: { type: 'string', nullable: true, example: null },
+				  refCode: { type: 'string', example: '2fb707d9-4d7c-4a59-9153-49ce19413cbb' },
+				  role: { type: 'string', example: 'creator' },
+				  balance: { type: 'string', example: '1000' }
 				}
+			  },
+			  fromUser: {
+				type: 'object',
+				properties: {
+				  id: { type: 'number', example: 1 },
+				  telegramId: { type: 'string', example: '631855340' },
+				  username: { type: 'string', nullable: true, example: null },
+				  isBaned: { type: 'boolean', example: false },
+				  isVerified: { type: 'boolean', example: false },
+				  createdAt: {
+					type: 'string',
+					format: 'date-time',
+					example: '2024-08-20T17:06:27.154Z'
+				  },
+				  inviterRefCode: { type: 'string', nullable: true, example: null },
+				  refCode: { type: 'string', example: '39b09ee3-9634-42f5-8ad2-166da7502aa8' },
+				  role: { type: 'string', example: 'advertiser' },
+				  balance: { type: 'string', example: '9999000' }
+				}
+			  }
 			}
+		  }
 		}
-	})
+	  })
+	  
 	async findUserTransactions(
 		@Query('userId') userId: string,
 		@Req() req: Request
