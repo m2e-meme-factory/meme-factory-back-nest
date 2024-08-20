@@ -7,6 +7,7 @@ import { EventType, ProgressStatus, User, UserRole } from '@prisma/client'
 import { EventService } from 'src/event/event.service'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { checkProjectOwnership, checkUserRole } from '../project.utils'
+import { IDetails } from '../types/project.types'
 
 @Injectable()
 export class ProjectProgressService {
@@ -69,12 +70,56 @@ export class ProjectProgressService {
 		user: User,
 		projectId: number,
 		creatorId?: number
-	) {
-		return await this.prisma.progressProject.findMany({
-			where: { projectId, ...(creatorId && { userId: creatorId }) },
-			include: { events: true, user: true }
-		})
-	}
+	  ) {
+		const progressProjects = await this.prisma.progressProject.findMany({
+		  where: { projectId, ...(creatorId && { userId: creatorId }) },
+		  include: { events: true, user: true },
+		});
+	  
+		return progressProjects.map(progressProject => {
+		  const tasksStatus = progressProject.events.reduce(
+			(acc, event) => {
+			  const details: IDetails = event.details;
+	  
+			  if (details?.taskId) {
+				const taskId = details.taskId;
+	  
+				switch (event.eventType) {
+				  case 'TASK_COMPLETED':
+					acc.approvedTasks.add(taskId);
+					acc.appliedTasks.delete(taskId);
+					acc.rejectedTasks.delete(taskId);
+					break;
+				  case 'TASK_SUBMIT':
+					acc.appliedTasks.add(taskId);
+					acc.rejectedTasks.delete(taskId);
+					break;
+				  case 'TASK_REJECTED':
+					if (acc.appliedTasks.has(taskId)) {
+					  acc.rejectedTasks.add(taskId);
+					  acc.appliedTasks.delete(taskId);
+					}
+					break;
+				}
+			  }
+			  return acc;
+			},
+			{
+			  appliedTasks: new Set<number>(),
+			  approvedTasks: new Set<number>(),
+			  rejectedTasks: new Set<number>(),
+			}
+		  );
+	  
+		  return {
+			...progressProject,
+			appliedTasks: Array.from(tasksStatus.appliedTasks),
+			approvedTasks: Array.from(tasksStatus.approvedTasks),
+			rejectedTasks: Array.from(tasksStatus.rejectedTasks),
+		  };
+		});
+	  }
+	  
 
 	async getAllProjectByCreatorId(creatorId: number) {
 		const progressProjects = await this.prisma.progressProject.findMany({
