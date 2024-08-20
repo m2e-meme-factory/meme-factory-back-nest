@@ -79,10 +79,9 @@ export class ProjectProgressService {
 		return progressProjects.map(progressProject => {
 		  const tasksStatus = progressProject.events.reduce(
 			(acc, event) => {
-			  const details: IDetails = event.details;
-	  
-			  if (details?.taskId) {
-				const taskId = details.taskId;
+				let {taskId} = event.details as IDetails
+			  if (taskId) {
+				taskId = taskId;
 	  
 				switch (event.eventType) {
 				  case 'TASK_COMPLETED':
