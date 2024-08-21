@@ -164,12 +164,14 @@ export class TaskProgressService {
 						}
 					})
 
-					await this.projectProgressService.updateProjectProgressStatus(
-						user,
-						existingProgress.id,
-						ProgressStatus.accepted,
-						'Автоматическое принятие заявки на проект после принятия задачи'
-					)
+					if (existingProgress.status === ProgressStatus.pending) {
+						await this.projectProgressService.updateProjectProgressStatus(
+							user,
+							existingProgress.id,
+							ProgressStatus.accepted,
+							'Автоматическое принятие заявки на проект после принятия задачи'
+						)
+					}
 
 					return { event: event, transaction: transaction }
 				} catch (error) {
