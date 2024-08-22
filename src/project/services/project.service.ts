@@ -110,6 +110,10 @@ export class ProjectService {
 		try {
 			const whereClause: Prisma.ProjectWhereInput = {}
 
+			whereClause.status = {
+				not: "closed"
+			};
+
 			if (tags && tags.length > 0) {
 				whereClause.tags = {
 					hasSome: tags
