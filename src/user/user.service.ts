@@ -205,6 +205,20 @@ export class UserService {
 			)
 		}
 	}
+	async updateUserBalance(id: number, balance: Decimal): Promise<User> {
+		try {
+			const user = await this.prisma.user.update({
+				where: { id },
+				data: { balance }
+			})
+
+			return user
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при обновлении баланса пользователя: ${error}`
+			)
+		}
+	}
 
 	async updateUserBalanceByUserId(
 		userId: number,

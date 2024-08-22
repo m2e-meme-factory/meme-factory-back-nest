@@ -82,7 +82,8 @@ export class ProjectService {
 						include: {
 							task: true
 						}
-					}
+					},
+					author: true
 				}
 			})
 			if (!project) {
@@ -186,8 +187,8 @@ export class ProjectService {
 		updateProjectDto: UpdateProjectDto,
 		user: User
 	): Promise<Project> {
-		await checkUserRole(user, UserRole.advertiser)
-		await checkProjectOwnership(id, user.id)
+		await checkUserRole(user, UserRole.advertiser);
+		await checkProjectOwnership(id, user.id);
 		const {
 			title,
 			description,
@@ -197,16 +198,16 @@ export class ProjectService {
 			category,
 			subtasks,
 			price
-		} = updateProjectDto
-
+		} = updateProjectDto;
+	
 		try {
 			const projectExists = await this.prisma.project.findUnique({
 				where: { id }
-			})
+			});
 			if (!projectExists) {
-				throw new NotFoundException(`Проект с ID ${id} не найден`)
+				throw new NotFoundException('Проект с ID ${id} не найден');
 			}
-
+	
 			const project = await this.prisma.project.update({
 				where: { id },
 				data: {
@@ -218,40 +219,9 @@ export class ProjectService {
 					category,
 					price
 				}
-			})
-
+			});
+	
 			if (subtasks) {
-				const existingTasks = await this.prisma.task.findMany({
-					where: {
-						projects: {
-							some: {
-								projectId: id
-							}
-						}
-					}
-				})
-
-				const existingTaskIds = existingTasks.map(task => task.id)
-				const newTaskIds = subtasks
-					.map(task => task.id)
-					.filter(id => id !== undefined)
-
-				const tasksToDelete = existingTaskIds.filter(
-					taskId => !newTaskIds.includes(taskId)
-				)
-				if (tasksToDelete.length > 0) {
-					await this.prisma.projectTask.deleteMany({
-						where: {
-							projectId: id,
-							taskId: { in: tasksToDelete }
-						}
-					})
-
-					await this.prisma.task.deleteMany({
-						where: { id: { in: tasksToDelete } }
-					})
-				}
-
 				for (const subtask of subtasks) {
 					if (subtask.id) {
 						await this.prisma.task.update({
@@ -261,7 +231,7 @@ export class ProjectService {
 								description: subtask.description,
 								price: subtask.price
 							}
-						})
+						});
 					} else {
 						await this.prisma.task.create({
 							data: {
@@ -274,20 +244,20 @@ export class ProjectService {
 									}
 								}
 							}
-						})
+						});
 					}
 				}
 			}
-
-			return project
+	
+			return project;
 		} catch (error) {
 			if (error instanceof NotFoundException) {
-				throw error
+				throw error;
 			}
 			throw new InternalServerErrorException(
 				'Ошибка при обновлении проекта:',
 				error
-			)
+			);
 		}
 	}
 
