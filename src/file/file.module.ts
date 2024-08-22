@@ -10,6 +10,7 @@ import { path } from 'app-root-path';
       rootPath: `${path}/uploads`,
       serveRoot: '/uploads',
       serveStaticOptions: {
+    	index: false,
         setHeaders: (res) => {
           res.setHeader('Content-Disposition', 'attachment');
         },
