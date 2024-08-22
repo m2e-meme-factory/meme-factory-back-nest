@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { FileResponse } from './file.interface'
 import { path } from 'app-root-path'
 import { ensureDir, writeFile } from 'fs-extra'

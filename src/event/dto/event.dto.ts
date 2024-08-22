@@ -44,8 +44,10 @@ export class CreateEventDto {
 	@IsOptional()
 	details?: Record<string, any>
 
+	@ApiProperty({description: 'relation to progress', required: false, example: 1})
+	@IsOptional()
 	@IsInt()
-	progressProjectId: number
+	progressProjectId?: number
 
 	@IsString()
 	@IsOptional()

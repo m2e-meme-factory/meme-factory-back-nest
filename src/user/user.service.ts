@@ -5,43 +5,43 @@ import {
 	NotFoundException
 } from '@nestjs/common'
 import { PrismaService } from 'src/prisma/prisma.service'
-import { CreateUserDto } from './dto/user.dto'
 import { v4 as uuidv4 } from 'uuid'
 import { IUser } from './types/user.types'
 import { User, UserRole } from '@prisma/client'
+import { Decimal } from '@prisma/client/runtime/library'
 
 @Injectable()
 export class UserService {
 	constructor(private readonly prisma: PrismaService) {}
 
 	// func for test
-	async createUser(createUserDto: CreateUserDto): Promise<IUser> {
-		const { telegramId, username, isBaned, isVerified, inviterRefCode } =
-			createUserDto
+	// async createUser(createUserDto: CreateUserDto): Promise<IUser> {
+	// 	const { telegramId, username, isBaned, isVerified, inviterRefCode } =
+	// 		createUserDto
 
-		const existingUser = await this.prisma.user.findUnique({
-			where: { telegramId }
-		})
+	// 	const existingUser = await this.prisma.user.findUnique({
+	// 		where: { telegramId }
+	// 	})
 
-		if (existingUser) {
-			throw new BadRequestException('User with this telegramId already exists')
-		}
+	// 	if (existingUser) {
+	// 		throw new BadRequestException('User with this telegramId already exists')
+	// 	}
 
-		const refCode = uuidv4()
+	// 	const refCode = uuidv4()
 
-		const user = await this.prisma.user.create({
-			data: {
-				telegramId,
-				username,
-				isBaned: isBaned ?? false,
-				isVerified: isVerified ?? false,
-				inviterRefCode: inviterRefCode || null,
-				refCode
-			}
-		})
+	// 	const user = await this.prisma.user.create({
+	// 		data: {
+	// 			telegramId,
+	// 			username,
+	// 			isBaned: isBaned ?? false,
+	// 			isVerified: isVerified ?? false,
+	// 			inviterRefCode: inviterRefCode || null,
+	// 			refCode
+	// 		}
+	// 	})
 
-		return user
-	}
+	// 	return user
+	// }
 
 	// real func
 	async findOrCreateUser(
@@ -206,7 +206,42 @@ export class UserService {
 		}
 	}
 
-	// может быть пригодится
+	async updateUserBalanceByUserId(
+		userId: number,
+		amount: Decimal,
+		isAdd: boolean = true
+	) {
+		try {
+			const user = await this.prisma.user.findUnique({
+				where: { id: userId },
+				select: { balance: true }
+			})
+
+			if (!user) {
+				throw new NotFoundException(`User с ID ${userId} не найден`)
+			}
+
+			if (!isAdd && user.balance.lessThan(amount)) {
+				throw new Error('Недостаточно средств')
+			}
+
+			const updatedUser = await this.prisma.user.update({
+				where: { id: userId },
+				data: {
+					balance: isAdd ? { increment: amount } : { decrement: amount }
+				},
+				select: { balance: true }
+			})
+
+			return updatedUser.balance
+		} catch (error) {
+			if (error.message === 'Недостаточно средств') {
+				throw new Error(error.message)
+			}
+			throw new NotFoundException(`User с ID ${userId} не найден`)
+		}
+	}
+
 	// async getUserBalanceByUserId(userId: number) {
 	// 	try {
 	// 		const user = await this.prisma.user.findUnique({ where: { id: userId } })

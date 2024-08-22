@@ -1,10 +1,11 @@
 import { Body, Controller, Get, Post, Req } from '@nestjs/common'
 import { PublicRoute } from './decorators/public-route.decorator'
 import { AuthService } from './auth.service'
-import { ApiBearerAuth } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
 
 @Controller('auth')
 @ApiBearerAuth('access-token')
+@ApiTags('auth')
 export class AuthController {
     constructor(private authService: AuthService) {}
 
