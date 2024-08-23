@@ -150,7 +150,7 @@ export class ProjectService {
 			})
 
 			const transformedProjects: IProjectResponse[] = projects.map(project => {
-				const {minPrice, maxPrice} = countProjectPrice(project.tasks)
+				const {minPrice, maxPrice} = countProjectPrice(project.tasks.map(task => task))
 	
 				return {
 					project,
