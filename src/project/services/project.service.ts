@@ -1,7 +1,7 @@
 import {
 	Injectable,
 	NotFoundException,
-	InternalServerErrorException,
+	InternalServerErrorException
 } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import { Prisma, Project, ProjectStatus, User, UserRole } from '@prisma/client'
@@ -9,7 +9,11 @@ import { CreateProjectDto, UpdateProjectDto } from '../dto/project.dto'
 import { TelegramUpdate } from 'src/telegram/telegram.update'
 import { EventService } from 'src/event/event.service'
 import { IDetails, IProjectResponse } from '../types/project.types'
-import { checkProjectOwnership, checkUserRole, countProjectPrice } from '../project.utils'
+import {
+	checkProjectOwnership,
+	checkUserRole,
+	countProjectPrice
+} from '../project.utils'
 
 @Injectable()
 export class ProjectService {
@@ -19,24 +23,16 @@ export class ProjectService {
 		private readonly eventService: EventService
 	) {}
 
-
 	async createProject(
 		createProjectDto: CreateProjectDto,
 		user: User
 	): Promise<IProjectResponse> {
 		await checkUserRole(user, UserRole.advertiser)
-		const {
-			title,
-			description,
-			bannerUrl,
-			files,
-			tags,
-			category,
-			subtasks,
-		} = createProjectDto
+		const { title, description, bannerUrl, files, tags, category, subtasks } =
+			createProjectDto
 
 		try {
-			const {minPrice, maxPrice} = countProjectPrice(subtasks)
+			const { minPrice, maxPrice } = countProjectPrice(subtasks)
 			const project = await this.prisma.project.create({
 				data: {
 					authorId: user.id,
@@ -45,7 +41,7 @@ export class ProjectService {
 					bannerUrl,
 					files,
 					tags,
-					category,
+					category
 				}
 			})
 
@@ -64,7 +60,7 @@ export class ProjectService {
 				})
 			}
 
-			return {project, minPrice, maxPrice}
+			return { project, minPrice, maxPrice }
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при создании проекта: ${error}`
@@ -88,9 +84,11 @@ export class ProjectService {
 			if (!project) {
 				throw new NotFoundException()
 			}
-			const {minPrice, maxPrice} = countProjectPrice(project.tasks)
+			const { minPrice, maxPrice } = countProjectPrice(
+				project.tasks.map(task => task.task)
+			)
 
-			return {project, minPrice, maxPrice}
+			return { project, minPrice, maxPrice }
 		} catch (error) {
 			if (error instanceof NotFoundException) {
 				throw new NotFoundException(`Проект с ID ${id} не найден`)
@@ -113,8 +111,8 @@ export class ProjectService {
 			const whereClause: Prisma.ProjectWhereInput = {}
 
 			whereClause.status = {
-				not: "closed"
-			};
+				not: 'closed'
+			}
 
 			if (tags && tags.length > 0) {
 				whereClause.tags = {
@@ -150,14 +148,16 @@ export class ProjectService {
 			})
 
 			const transformedProjects: IProjectResponse[] = projects.map(project => {
-				const {minPrice, maxPrice} = countProjectPrice(project.tasks.map(task => task.task))
-	
+				const { minPrice, maxPrice } = countProjectPrice(
+					project.tasks.map(task => task.task)
+				)
+
 				return {
 					project,
 					minPrice,
 					maxPrice
-				};
-			});
+				}
+			})
 
 			return {
 				projects: transformedProjects,
@@ -174,14 +174,14 @@ export class ProjectService {
 		userId: number,
 		page: number = 1,
 		limit: number = 10
-	): Promise<{projects: IProjectResponse[], total: number}> {
+	): Promise<{ projects: IProjectResponse[]; total: number }> {
 		const offset = (page - 1) * limit
 
 		try {
 			const [projects, total] = await this.prisma.$transaction([
 				this.prisma.project.findMany({
 					where: { authorId: userId },
-					include: { tasks: true },
+					include: { tasks: { include: { task: true } } },
 					skip: offset,
 					take: limit
 				}),
@@ -189,15 +189,16 @@ export class ProjectService {
 			])
 
 			const transformedProjects: IProjectResponse[] = projects.map(project => {
-				const {minPrice, maxPrice} = countProjectPrice(project.tasks)
+				const { minPrice, maxPrice } = countProjectPrice(
+					project.tasks.map(task => task.task)
+				)
 
 				return {
 					project,
 					minPrice,
 					maxPrice
-				};
-
-			}) 
+				}
+			})
 
 			return { projects: transformedProjects, total }
 		} catch (error) {
@@ -213,26 +214,19 @@ export class ProjectService {
 		updateProjectDto: UpdateProjectDto,
 		user: User
 	): Promise<IProjectResponse> {
-		await checkUserRole(user, UserRole.advertiser);
-		await checkProjectOwnership(id, user.id);
-		const {
-			title,
-			description,
-			bannerUrl,
-			files,
-			tags,
-			category,
-			subtasks,
-		} = updateProjectDto;
-	
+		await checkUserRole(user, UserRole.advertiser)
+		await checkProjectOwnership(id, user.id)
+		const { title, description, bannerUrl, files, tags, category, subtasks } =
+			updateProjectDto
+
 		try {
 			const projectExists = await this.prisma.project.findUnique({
 				where: { id }
-			});
+			})
 			if (!projectExists) {
-				throw new NotFoundException('Проект с ID ${id} не найден');
+				throw new NotFoundException('Проект с ID ${id} не найден')
 			}
-	
+
 			const project = await this.prisma.project.update({
 				where: { id },
 				data: {
@@ -241,10 +235,10 @@ export class ProjectService {
 					bannerUrl,
 					files,
 					tags,
-					category,
+					category
 				}
-			});
-	
+			})
+
 			if (subtasks) {
 				for (const subtask of subtasks) {
 					if (subtask.id) {
@@ -255,7 +249,7 @@ export class ProjectService {
 								description: subtask.description,
 								price: subtask.price
 							}
-						});
+						})
 					} else {
 						await this.prisma.task.create({
 							data: {
@@ -268,23 +262,22 @@ export class ProjectService {
 									}
 								}
 							}
-						});
+						})
 					}
 				}
 			}
 
-			const {minPrice, maxPrice} = countProjectPrice(subtasks)
+			const { minPrice, maxPrice } = countProjectPrice(subtasks)
 
-	
-			return {project, minPrice, maxPrice};
+			return { project, minPrice, maxPrice }
 		} catch (error) {
 			if (error instanceof NotFoundException) {
-				throw error;
+				throw error
 			}
 			throw new InternalServerErrorException(
 				'Ошибка при обновлении проекта:',
 				error
-			);
+			)
 		}
 	}
 
@@ -337,13 +330,18 @@ export class ProjectService {
 			const project = await this.prisma.project.update({
 				where: { id },
 				data: { status },
-				include: {tasks: true}
+				include: {
+					tasks: {
+						include: { task: true }
+					}
+				}
 			})
 
-			const {minPrice, maxPrice} = countProjectPrice(project.tasks)
+			const { minPrice, maxPrice } = countProjectPrice(
+				project.tasks.map(task => task.task)
+			)
 
-
-			return {project, minPrice, maxPrice}
+			return { project, minPrice, maxPrice }
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при обновлении статуса проекта: ${error}`
@@ -480,10 +478,17 @@ export class ProjectService {
 			? (project.project.files as string[])
 			: JSON.parse(project.project.files as any)
 
-		await this.telegramUpdate.sendFilesToUser(telegramId, files, project.project.title)
+		await this.telegramUpdate.sendFilesToUser(
+			telegramId,
+			files,
+			project.project.title
+		)
 	}
 
-	async calculateTotalProjectCost(user: User, projectId: number): Promise<number> {
+	async calculateTotalProjectCost(
+		user: User,
+		projectId: number
+	): Promise<number> {
 		try {
 			await checkUserRole(user, UserRole.advertiser)
 			await checkProjectOwnership(projectId, user.id)
@@ -492,7 +497,6 @@ export class ProjectService {
 				include: { events: true }
 			})
 
-			
 			let totalAmount = 0
 
 			projectProgressList.forEach(progress => {

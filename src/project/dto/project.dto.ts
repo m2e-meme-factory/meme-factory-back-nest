@@ -1,7 +1,9 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger'
 import { ProjectStatus } from '@prisma/client'
+import { Decimal } from '@prisma/client/runtime/library'
 import {
 	IsArray,
+	IsDecimal,
 	IsInt,
 	IsNotEmpty,
 	IsNumber,
@@ -23,8 +25,8 @@ export class CreateTaskDto {
 	description: string
 
 	@ApiProperty({ example: 1000 })
-	@IsNumber()
-	price: number
+	@IsDecimal()
+	price: Decimal
 }
 
 export class CreateProjectDto {

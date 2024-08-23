@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from "@nestjs/common"
 import { PrismaClient, User, UserRole } from "@prisma/client"
 import { Decimal } from "@prisma/client/runtime/library";
+import { CreateTaskDto } from "./dto/project.dto";
 const prisma = new PrismaClient();
 
 export async function checkUserRole(user: User, role: UserRole) {
@@ -25,7 +26,7 @@ export async function checkProjectOwnership(projectId: number, userId: number) {
     }
 }
 
-export function countProjectPrice(subtasks) {
+export function countProjectPrice(subtasks: CreateTaskDto[]) {
     const minPrice = subtasks.reduce((min, subtask) => {
         return Decimal.min(min, new Decimal(subtask.price));
     }, new Decimal(subtasks[0].price));
