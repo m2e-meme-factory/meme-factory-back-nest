@@ -32,9 +32,9 @@ export function countProjectPrice(subtasks: CreateTaskDto[]) {
 		return Decimal.min(min, new Decimal(subtask.price))
 	}, new Decimal(subtasks[0].price))
 
-	const maxPrice = subtasks.reduce((max, subtask) => {
-		return Decimal.max(max, new Decimal(subtask.price))
-	}, new Decimal(subtasks[0].price))
+    const maxPrice = subtasks.reduce((sum, subtask) => {
+        return sum.plus(new Decimal(subtask.price));
+    }, new Decimal(0));
 
 	return { minPrice: minPrice, maxPrice: maxPrice }
 }
