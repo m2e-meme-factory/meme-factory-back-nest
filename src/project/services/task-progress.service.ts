@@ -10,7 +10,7 @@ import { EventType, ProgressStatus, User, UserRole } from '@prisma/client'
 import { EventService } from 'src/event/event.service'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { checkUserRole } from '../project.utils'
-import { IDetails } from '../types/project.types'
+// import { IDetails } from '../types/project.types'
 import { TransactionService } from 'src/transaction/transaction.service'
 import { ProjectProgressService } from './project-progress.service'
 
@@ -47,30 +47,30 @@ export class TaskProgressService {
 				throw new ConflictException('Заявка на проект не подана')
 			}
 
-			const hasSubmitted = existingProgress.events.some((item, index) => {
-				const details = item.details as IDetails | undefined
-				if (
-					details?.taskId === taskId &&
-					item.eventType === EventType.TASK_SUBMIT
-				) {
-					for (let i = index + 1; i < existingProgress.events.length; i++) {
-						const nextEvent = existingProgress.events[i]
-						const nextDetails = nextEvent.details as IDetails | undefined
-						if (
-							nextDetails?.taskId === taskId &&
-							nextEvent.eventType === EventType.TASK_REJECTED
-						) {
-							return false
-						}
-					}
-					return true
-				}
-				return false
-			})
+			// const hasSubmitted = existingProgress.events.some((item, index) => {
+			// 	const details = item.details as IDetails | undefined
+			// 	if (
+			// 		details?.taskId === taskId &&
+			// 		item.eventType === EventType.TASK_SUBMIT
+			// 	) {
+			// 		for (let i = index + 1; i < existingProgress.events.length; i++) {
+			// 			const nextEvent = existingProgress.events[i]
+			// 			const nextDetails = nextEvent.details as IDetails | undefined
+			// 			if (
+			// 				nextDetails?.taskId === taskId &&
+			// 				nextEvent.eventType === EventType.TASK_REJECTED
+			// 			) {
+			// 				return false
+			// 			}
+			// 		}
+			// 		return true
+			// 	}
+			// 	return false
+			// })
 
-			if (hasSubmitted) {
-				throw new ConflictException('Заявка на задание уже подана')
-			}
+			// if (hasSubmitted) {
+			// 	throw new ConflictException('Заявка на задание уже подана')
+			// }
 
 			const event = await this.eventService.createEvent({
 				userId: user.id,

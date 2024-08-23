@@ -8,8 +8,8 @@ import { Prisma, Project, ProjectStatus, User, UserRole } from '@prisma/client'
 import { CreateProjectDto, UpdateProjectDto } from '../dto/project.dto'
 import { TelegramUpdate } from 'src/telegram/telegram.update'
 import { EventService } from 'src/event/event.service'
-import { IDetails } from '../types/project.types'
-import { checkProjectOwnership, checkUserRole } from '../project.utils'
+import { IDetails, IProjectResponse } from '../types/project.types'
+import { checkProjectOwnership, checkUserRole, countProjectPrice } from '../project.utils'
 
 @Injectable()
 export class ProjectService {
@@ -23,7 +23,7 @@ export class ProjectService {
 	async createProject(
 		createProjectDto: CreateProjectDto,
 		user: User
-	): Promise<Project> {
+	): Promise<IProjectResponse> {
 		await checkUserRole(user, UserRole.advertiser)
 		const {
 			title,
@@ -33,10 +33,10 @@ export class ProjectService {
 			tags,
 			category,
 			subtasks,
-			price
 		} = createProjectDto
 
 		try {
+			const {minPrice, maxPrice} = countProjectPrice(subtasks)
 			const project = await this.prisma.project.create({
 				data: {
 					authorId: user.id,
@@ -46,7 +46,6 @@ export class ProjectService {
 					files,
 					tags,
 					category,
-					price
 				}
 			})
 
@@ -65,7 +64,7 @@ export class ProjectService {
 				})
 			}
 
-			return project
+			return {project, minPrice, maxPrice}
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при создании проекта: ${error}`
@@ -73,7 +72,7 @@ export class ProjectService {
 		}
 	}
 
-	async getProjectById(id: number): Promise<Project | null> {
+	async getProjectById(id: number): Promise<IProjectResponse | null> {
 		try {
 			const project = await this.prisma.project.findUnique({
 				where: { id },
@@ -89,7 +88,9 @@ export class ProjectService {
 			if (!project) {
 				throw new NotFoundException()
 			}
-			return project
+			const {minPrice, maxPrice} = countProjectPrice(project.tasks)
+
+			return {project, minPrice, maxPrice}
 		} catch (error) {
 			if (error instanceof NotFoundException) {
 				throw new NotFoundException(`Проект с ID ${id} не найден`)
@@ -107,7 +108,7 @@ export class ProjectService {
 		category?: string,
 		page: number = 1,
 		limit: number = 10
-	): Promise<{ projects: Project[]; total: number }> {
+	): Promise<{ projects: IProjectResponse[]; total: number }> {
 		try {
 			const whereClause: Prisma.ProjectWhereInput = {}
 
@@ -148,8 +149,18 @@ export class ProjectService {
 				}
 			})
 
+			const transformedProjects: IProjectResponse[] = projects.map(project => {
+				const {minPrice, maxPrice} = countProjectPrice(project.tasks)
+	
+				return {
+					project,
+					minPrice,
+					maxPrice
+				};
+			});
+
 			return {
-				projects,
+				projects: transformedProjects,
 				total
 			}
 		} catch (error) {
@@ -163,7 +174,7 @@ export class ProjectService {
 		userId: number,
 		page: number = 1,
 		limit: number = 10
-	) {
+	): Promise<{projects: IProjectResponse[], total: number}> {
 		const offset = (page - 1) * limit
 
 		try {
@@ -177,7 +188,18 @@ export class ProjectService {
 				this.prisma.project.count({ where: { authorId: userId } })
 			])
 
-			return { projects, total }
+			const transformedProjects: IProjectResponse[] = projects.map(project => {
+				const {minPrice, maxPrice} = countProjectPrice(project.tasks)
+
+				return {
+					project,
+					minPrice,
+					maxPrice
+				};
+
+			}) 
+
+			return { projects: transformedProjects, total }
 		} catch (error) {
 			throw new InternalServerErrorException(
 				'Ошибка при получении проектов пользователя',
@@ -190,7 +212,7 @@ export class ProjectService {
 		id: number,
 		updateProjectDto: UpdateProjectDto,
 		user: User
-	): Promise<Project> {
+	): Promise<IProjectResponse> {
 		await checkUserRole(user, UserRole.advertiser);
 		await checkProjectOwnership(id, user.id);
 		const {
@@ -201,7 +223,6 @@ export class ProjectService {
 			tags,
 			category,
 			subtasks,
-			price
 		} = updateProjectDto;
 	
 		try {
@@ -221,7 +242,6 @@ export class ProjectService {
 					files,
 					tags,
 					category,
-					price
 				}
 			});
 	
@@ -252,8 +272,11 @@ export class ProjectService {
 					}
 				}
 			}
+
+			const {minPrice, maxPrice} = countProjectPrice(subtasks)
+
 	
-			return project;
+			return {project, minPrice, maxPrice};
 		} catch (error) {
 			if (error instanceof NotFoundException) {
 				throw error;
@@ -306,17 +329,21 @@ export class ProjectService {
 		id: number,
 		status: ProjectStatus,
 		user: User
-	): Promise<Project> {
+	): Promise<IProjectResponse> {
 		await checkUserRole(user, UserRole.advertiser)
 		await checkProjectOwnership(id, user.id)
 
 		try {
 			const project = await this.prisma.project.update({
 				where: { id },
-				data: { status }
+				data: { status },
+				include: {tasks: true}
 			})
 
-			return project
+			const {minPrice, maxPrice} = countProjectPrice(project.tasks)
+
+
+			return {project, minPrice, maxPrice}
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при обновлении статуса проекта: ${error}`
@@ -443,17 +470,17 @@ export class ProjectService {
 		telegramId: string
 	): Promise<void> {
 		const project = await this.getProjectById(projectId)
-		if (!project || !project.files) {
+		if (!project || !project.project.files) {
 			throw new NotFoundException(
 				'Проект или файлы для данного проекта не найдены.'
 			)
 		}
 
-		const files: string[] = Array.isArray(project.files)
-			? (project.files as string[])
-			: JSON.parse(project.files as any)
+		const files: string[] = Array.isArray(project.project.files)
+			? (project.project.files as string[])
+			: JSON.parse(project.project.files as any)
 
-		await this.telegramUpdate.sendFilesToUser(telegramId, files, project.title)
+		await this.telegramUpdate.sendFilesToUser(telegramId, files, project.project.title)
 	}
 
 	async calculateTotalProjectCost(user: User, projectId: number): Promise<number> {

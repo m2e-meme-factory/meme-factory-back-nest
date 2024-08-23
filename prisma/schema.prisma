@@ -62,7 +62,6 @@ model Project {
   tags        String[]
   category    String
   subtasks    Task[]
-  price       Decimal
   author      User          @relation(fields: [authorId], references: [id])
   tasks       ProjectTask[]
   status      ProjectStatus @default(draft)

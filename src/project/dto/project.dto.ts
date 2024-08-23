@@ -65,10 +65,6 @@ export class CreateProjectDto {
 	})
 	@IsArray()
 	subtasks: CreateTaskDto[]
-
-	@ApiProperty({ example: 1000 })
-	@IsNumber()
-	price: number
 }
 
 export class UpdateProjectDto extends PartialType(CreateProjectDto) {}
