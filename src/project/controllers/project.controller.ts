@@ -69,7 +69,7 @@ export class ProjectController {
 	async createProject(
 		@Body() createProjectDto: CreateProjectDto,
 		@Req() req: Request
-	): Promise<{project: Project, minPrice: Decimal, maxPrice: Decimal}> {
+	): Promise<Project> {
 		const user: User = req['user']
 		return this.projectService.createProject(createProjectDto, user)
 	}
