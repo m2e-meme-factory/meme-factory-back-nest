@@ -26,7 +26,7 @@ export class ProjectService {
 	async createProject(
 		createProjectDto: CreateProjectDto,
 		user: User
-	): Promise<IProjectResponse> {
+	): Promise<Project> {
 		await checkUserRole(user, UserRole.advertiser)
 		const { title, description, bannerUrl, files, tags, category, subtasks } =
 			createProjectDto
@@ -84,11 +84,8 @@ export class ProjectService {
 			if (!project) {
 				throw new NotFoundException()
 			}
-			const { minPrice, maxPrice } = countProjectPrice(
-				project.tasks.map(task => task.task)
-			)
 
-			return { project, minPrice, maxPrice }
+			return project
 		} catch (error) {
 			if (error instanceof NotFoundException) {
 				throw new NotFoundException(`Проект с ID ${id} не найден`)
