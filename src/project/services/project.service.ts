@@ -87,7 +87,7 @@ export class ProjectService {
 
 
 			const { minPrice, maxPrice } = countProjectPrice(
-				project.tasks.length > 0 && project.tasks.map(task => task.task)
+				project.tasks.map(task => task.task)
 			)
 
 			return { project, minPrice, maxPrice }
