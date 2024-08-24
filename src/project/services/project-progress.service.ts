@@ -26,7 +26,10 @@ export class ProjectProgressService {
 					projectId
 				}
 			})
-
+			
+			if (progressProject.status === ProgressStatus.pending) {
+				throw new Error('Заявка на проект уже подана')
+			}
 			if (!progressProject) {
 				progressProject = await this.prisma.progressProject.create({
 					data: {
@@ -34,9 +37,6 @@ export class ProjectProgressService {
 						projectId
 					}
 				})
-			}
-			if (progressProject.status === ProgressStatus.pending) {
-				throw new Error('Заявка на проект уже подана')
 			}
 
 			if (progressProject.status === ProgressStatus.rejected) {
