@@ -25,16 +25,18 @@ export async function checkProjectOwnership(projectId: number, userId: number) {
 }
 
 export function countProjectPrice(subtasks: CreateTaskDto[]) {
-	if (subtasks.length === 0) {
-		return { minPrice: null, maxPrice: null }
-	}
-	const minPrice = subtasks.reduce((min, subtask) => {
-		return Decimal.min(min, new Decimal(subtask.price))
-	}, new Decimal(subtasks[0].price))
+    if (subtasks.length === 0) {
+        return { minPrice: null, maxPrice: null };
+    }
 
-    const maxPrice = subtasks.reduce((sum, subtask) => {
-        return sum.plus(new Decimal(subtask.price));
-    }, new Decimal(0));
+    let minPrice = new Decimal(subtasks[0].price);
+    let maxPrice = new Decimal(0);
 
-	return { minPrice: minPrice, maxPrice: maxPrice }
+    for (const subtask of subtasks) {
+        const price = new Decimal(subtask.price);
+        minPrice = Decimal.min(minPrice, price);
+        maxPrice = maxPrice.plus(price);
+    }
+
+    return { minPrice, maxPrice };
 }

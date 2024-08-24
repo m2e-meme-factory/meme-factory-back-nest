@@ -7,7 +7,7 @@ import { PrismaService } from '../../prisma/prisma.service'
 import { Prisma, Project, ProjectStatus, User, UserRole } from '@prisma/client'
 import { CreateProjectDto, UpdateProjectDto } from '../dto/project.dto'
 import { TelegramUpdate } from 'src/telegram/telegram.update'
-import { EventService } from 'src/event/event.service'
+// import { EventService } from 'src/event/event.service'
 import { IDetails, IProjectResponse } from '../types/project.types'
 import {
 	checkProjectOwnership,
@@ -19,8 +19,8 @@ import {
 export class ProjectService {
 	constructor(
 		private readonly prisma: PrismaService,
-		private readonly telegramUpdate: TelegramUpdate,
-		private readonly eventService: EventService
+		private readonly telegramUpdate: TelegramUpdate
+		// private readonly eventService: EventService
 	) {}
 
 	async createProject(
@@ -32,7 +32,7 @@ export class ProjectService {
 			createProjectDto
 
 		try {
-			const { minPrice, maxPrice } = countProjectPrice(subtasks)
+			// const { minPrice, maxPrice } = countProjectPrice(subtasks)
 			const project = await this.prisma.project.create({
 				data: {
 					authorId: user.id,
@@ -60,7 +60,7 @@ export class ProjectService {
 				})
 			}
 
-			return { project, minPrice, maxPrice }
+			return project
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при создании проекта: ${error}`
@@ -85,7 +85,12 @@ export class ProjectService {
 				throw new NotFoundException()
 			}
 
-			return project
+
+			const { minPrice, maxPrice } = countProjectPrice(
+				project.tasks.length > 0 && project.tasks.map(task => task.task)
+			)
+
+			return { project, minPrice, maxPrice }
 		} catch (error) {
 			if (error instanceof NotFoundException) {
 				throw new NotFoundException(`Проект с ID ${id} не найден`)
