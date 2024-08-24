@@ -41,6 +41,10 @@ model User {
   transactionsReceived Transaction[] @relation("ToUser")
 
   ProgressProject ProgressProject[]
+
+  MetaTag MetaTag[]
+
+  @@map("users")
 }
 
 model UserInfo {
@@ -179,4 +183,15 @@ enum EventType {
   DISPUTE_RESOLVED
   USER_MESSAGE
   RATING_GIVEN
+}
+
+model MetaTag {
+  id        Int      @id @default(autoincrement())
+  tag       String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId], name: "userId_idx")
+  @@map("meta_tags")
 }
