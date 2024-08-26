@@ -146,7 +146,8 @@ export class TaskProgressService {
 						fromUserId: user.id,
 						toUserId: creatorId,
 						taskId: taskId,
-						projectId: projectTask.projectId
+						projectId: projectTask.projectId,
+						type: 'PAYMENT'
 					})
 
 					const event = await this.eventService.createEvent({
