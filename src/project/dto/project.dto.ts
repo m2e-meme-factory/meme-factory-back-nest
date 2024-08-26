@@ -69,11 +69,18 @@ export class CreateProjectDto {
 	subtasks: CreateTaskDto[]
 }
 
-export class UpdateProjectDto extends PartialType(CreateProjectDto) {}
+export class UpdateProjectDto extends PartialType(CreateProjectDto) {
+	@IsArray()
+	@ApiProperty({ example: [1, 2, 3, 4, 5] })
+	@IsOptional()
+	deletedTasks?: number[]
+}
 
 export class UpdateProjectStatusDto {
 	@ApiProperty({ enum: ProjectStatus })
 	status: ProjectStatus
+
+
 }
 // export class UpdateProjectApplicationStatusDto {
 // 	@ApiProperty({ enum: ApplicationStatus })

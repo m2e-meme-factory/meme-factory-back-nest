@@ -85,7 +85,6 @@ export class ProjectService {
 				throw new NotFoundException()
 			}
 
-
 			const { minPrice, maxPrice } = countProjectPrice(
 				project.tasks.map(task => task.task)
 			)
@@ -218,8 +217,16 @@ export class ProjectService {
 	): Promise<IProjectResponse> {
 		await checkUserRole(user, UserRole.advertiser)
 		await checkProjectOwnership(id, user.id)
-		const { title, description, bannerUrl, files, tags, category, subtasks } =
-			updateProjectDto
+		const {
+			title,
+			description,
+			bannerUrl,
+			files,
+			tags,
+			category,
+			subtasks,
+			deletedTasks
+		} = updateProjectDto
 
 		try {
 			const projectExists = await this.prisma.project.findUnique({
@@ -266,6 +273,19 @@ export class ProjectService {
 							}
 						})
 					}
+				}
+			}
+
+			if (deletedTasks && deletedTasks.length > 0) {
+				for (const taskId of deletedTasks) {
+					await this.prisma.projectTask.delete({
+						where: {
+							projectId_taskId: {
+								projectId: id,
+								taskId: taskId,
+							},
+						},
+					});
 				}
 			}
 
