@@ -111,7 +111,7 @@ model Transaction {
   toUserId   Int
   amount     Decimal
   createdAt  DateTime        @default(now())
-  type       TransactionType
+  type       TransactionType @default(PAYMENT)
 
   fromUser User @relation("FromUser", fields: [fromUserId], references: [id])
   toUser   User @relation("ToUser", fields: [toUserId], references: [id])

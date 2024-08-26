@@ -164,7 +164,7 @@ export class TaskProgressService {
 							amount: transaction.transaction.amount
 						}
 					})
-
+					
 					if (existingProgress.status === ProgressStatus.pending) {
 						await this.projectProgressService.updateProjectProgressStatus(
 							user,
