@@ -297,7 +297,7 @@ export class ProjectService {
 				throw error
 			}
 			throw new InternalServerErrorException(
-				'Ошибка при обновлении проекта:',
+				`Ошибка при обновлении проекта: ${error}`,
 				error
 			)
 		}
