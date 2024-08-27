@@ -201,12 +201,13 @@ export class TaskController {
 		@Body() body: RejectTaskCompletionDto
 	) {
 		const user = req['user']
-		const { creatorId, message } = body
+		const { creatorId, message, eventId } = body
 
 		return await this.taskProgressService.rejectTaskCompletion(
 			user,
 			taskId,
 			creatorId,
+			eventId,
 			message
 		)
 	}

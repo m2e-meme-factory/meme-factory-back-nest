@@ -201,6 +201,7 @@ export class TaskProgressService {
 		user: User,
 		taskId: number,
 		creatorId: number,
+		eventId: number,
 		message?: string
 	) {
 		checkUserRole(user, UserRole.advertiser)
@@ -239,7 +240,8 @@ export class TaskProgressService {
 					message: message,
 					progressProjectId: existingProgress.id,
 					details: {
-						taskId: taskId
+						taskId: taskId,
+						eventId: eventId
 					}
 				})
 

@@ -113,6 +113,12 @@ export class RejectTaskCompletionDto {
 	})
 	@IsNumber()
 	creatorId: number
+	@ApiProperty({
+		description: 'ID события, которое принимаем',
+		example: 1
+	})
+	@IsNumber()
+	eventId: number
 
 	@ApiProperty({
 		description: 'Сообщение с причиной отклонения',
