@@ -223,7 +223,7 @@ export class TaskProgressService {
 					where: {
 						projectId: projectTask.projectId,
 						userId: creatorId,
-						status: ProgressStatus.accepted
+						status: { in: [ProgressStatus.accepted, ProgressStatus.pending] }
 					}
 				})
 
