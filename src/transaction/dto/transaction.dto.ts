@@ -16,8 +16,8 @@ export class CreateTransactionDto {
 
 	@ApiProperty()
 	@IsInt()
-	@IsNotEmpty()
-	fromUserId: number
+	@IsOptional()
+	fromUserId?: number
 
 	@ApiProperty()
 	@IsInt()

@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { Transaction } from '@prisma/client'
+import { Transaction, TransactionType } from '@prisma/client'
 import {
 	CreateTransactionDto,
 	UpdateTransactionDto
 } from './dto/transaction.dto'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { UserService } from 'src/user/user.service'
-import { Decimal } from '@prisma/client/runtime/library'
+// import { Decimal } from '@prisma/client/runtime/library'
 
 @Injectable()
 export class TransactionService {
@@ -17,23 +17,29 @@ export class TransactionService {
 
 	async createTransaction(
 		data: CreateTransactionDto
-	): Promise<{ transaction: Transaction; newBalance: Decimal }> {
+	): Promise<Transaction> {
 		return this.prisma.$transaction(async prisma => {
-			await this.userService.updateUserBalanceByUserId(
-				data.fromUserId,
-				data.amount,
-				false
-			)
-			const updatedСreatorBalance =
+			if (data.fromUserId) {
+
+				await this.userService.updateUserBalanceByUserId(
+					data.fromUserId,
+					data.amount,
+					false
+				)
+			}
+
+			if (data.toUserId) {
+
 				await this.userService.updateUserBalanceByUserId(
 					data.toUserId,
 					data.amount,
-					true
+					data.type === TransactionType.WITHDRAWAL ? false : true
 				)
+			}
 
 			const transaction = await prisma.transaction.create({ data })
 
-			return { transaction, newBalance: updatedСreatorBalance }
+			return transaction
 		})
 	}
 

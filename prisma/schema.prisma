@@ -107,13 +107,13 @@ model Transaction {
   id         Int             @id @default(autoincrement())
   projectId  Int
   taskId     Int
-  fromUserId Int
+  fromUserId Int?
   toUserId   Int
   amount     Decimal
   createdAt  DateTime        @default(now())
   type       TransactionType @default(PAYMENT)
 
-  fromUser User @relation("FromUser", fields: [fromUserId], references: [id])
+  fromUser User? @relation("FromUser", fields: [fromUserId], references: [id])
   toUser   User @relation("ToUser", fields: [toUserId], references: [id])
 }
 
