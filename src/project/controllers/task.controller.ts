@@ -147,13 +147,15 @@ export class TaskController {
 		@Param('taskId', IdValidationPipe) taskId: number,
 		@Req() req: Request,
 		@Body('creatorId') creatorId: number,
-		@Body('message') message?: string
+		@Body('message') message?: string,
+		@Body('eventId') eventId: number
 	) {
 		const user = req['user']
 		return this.taskProgressService.approveTaskCompletion(
 			user,
 			taskId,
 			creatorId,
+			eventId,
 			message
 		)
 	}
