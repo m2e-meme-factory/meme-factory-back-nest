@@ -15,12 +15,9 @@ export class TransactionService {
 		private readonly userService: UserService
 	) {}
 
-	async createTransaction(
-		data: CreateTransactionDto
-	): Promise<Transaction> {
+	async createTransaction(data: CreateTransactionDto): Promise<Transaction> {
 		return this.prisma.$transaction(async prisma => {
 			if (data.fromUserId) {
-
 				await this.userService.updateUserBalanceByUserId(
 					data.fromUserId,
 					data.amount,
@@ -29,7 +26,6 @@ export class TransactionService {
 			}
 
 			if (data.toUserId) {
-
 				await this.userService.updateUserBalanceByUserId(
 					data.toUserId,
 					data.amount,

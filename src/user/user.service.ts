@@ -72,6 +72,12 @@ export class UserService {
 					MetaTag: metaTag ? { create: { tag: metaTag } } : undefined
 				}
 			})
+			// const userInfo = 
+			await this.prisma.userInfo.create({
+				data: {
+					userId: user.id
+				}
+			})
 			if (metaTag) {
 				await this.prisma.metaTag.create({
 					data: {
