@@ -1,7 +1,9 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger'
 import { ProjectStatus } from '@prisma/client'
+import { Decimal } from '@prisma/client/runtime/library'
 import {
 	IsArray,
+	IsDecimal,
 	IsInt,
 	IsNotEmpty,
 	IsNumber,
@@ -23,8 +25,8 @@ export class CreateTaskDto {
 	description: string
 
 	@ApiProperty({ example: 1000 })
-	@IsNumber()
-	price: number
+	@IsDecimal()
+	price: Decimal
 }
 
 export class CreateProjectDto {
@@ -65,17 +67,20 @@ export class CreateProjectDto {
 	})
 	@IsArray()
 	subtasks: CreateTaskDto[]
-
-	@ApiProperty({ example: 1000 })
-	@IsNumber()
-	price: number
 }
 
-export class UpdateProjectDto extends PartialType(CreateProjectDto) {}
+export class UpdateProjectDto extends PartialType(CreateProjectDto) {
+	@IsArray()
+	@ApiProperty({ example: [1, 2, 3, 4, 5] })
+	@IsOptional()
+	deletedTasks?: number[]
+}
 
 export class UpdateProjectStatusDto {
 	@ApiProperty({ enum: ProjectStatus })
 	status: ProjectStatus
+
+
 }
 // export class UpdateProjectApplicationStatusDto {
 // 	@ApiProperty({ enum: ApplicationStatus })
@@ -108,6 +113,12 @@ export class RejectTaskCompletionDto {
 	})
 	@IsNumber()
 	creatorId: number
+	@ApiProperty({
+		description: 'ID события, которое принимаем',
+		example: 1
+	})
+	@IsNumber()
+	eventId: number
 
 	@ApiProperty({
 		description: 'Сообщение с причиной отклонения',

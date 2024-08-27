@@ -48,7 +48,8 @@ export class UserService {
 		telegramId: number,
 		username?: string,
 		inviterRefCode?: string,
-		role: 'creator' | 'advertiser' = 'creator'
+		role: 'creator' | 'advertiser' = 'creator',
+		metaTag?: string
 	) {
 		const user = await this.prisma.user.findUnique({
 			where: {
@@ -67,11 +68,18 @@ export class UserService {
 					isVerified: false,
 					inviterRefCode: inviterRefCode || null,
 					refCode,
-					role: role
+					role: role,
+					MetaTag: metaTag ? { create: { tag: metaTag } } : undefined
 				}
 			})
-
-			return user
+			if (metaTag) {
+				await this.prisma.metaTag.create({
+					data: {
+						tag: metaTag,
+						userId: user.id
+					}
+				})
+			}
 		}
 		return user
 	}
@@ -202,6 +210,20 @@ export class UserService {
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при обновлении роли пользователя: ${error}`
+			)
+		}
+	}
+	async updateUserBalance(id: number, balance: Decimal): Promise<User> {
+		try {
+			const user = await this.prisma.user.update({
+				where: { id },
+				data: { balance }
+			})
+
+			return user
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при обновлении баланса пользователя: ${error}`
 			)
 		}
 	}

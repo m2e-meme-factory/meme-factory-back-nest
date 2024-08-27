@@ -147,13 +147,15 @@ export class TaskController {
 		@Param('taskId', IdValidationPipe) taskId: number,
 		@Req() req: Request,
 		@Body('creatorId') creatorId: number,
-		@Body('message') message?: string
+		@Body('eventId') eventId: number,
+		@Body('message') message?: string,
 	) {
 		const user = req['user']
 		return this.taskProgressService.approveTaskCompletion(
 			user,
 			taskId,
 			creatorId,
+			eventId,
 			message
 		)
 	}
@@ -199,12 +201,13 @@ export class TaskController {
 		@Body() body: RejectTaskCompletionDto
 	) {
 		const user = req['user']
-		const { creatorId, message } = body
+		const { creatorId, message, eventId } = body
 
 		return await this.taskProgressService.rejectTaskCompletion(
 			user,
 			taskId,
 			creatorId,
+			eventId,
 			message
 		)
 	}

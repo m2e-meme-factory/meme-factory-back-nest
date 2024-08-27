@@ -31,6 +31,8 @@ import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
 import { ProjectProgressService } from '../services/project-progress.service'
 import { TaskProgressService } from '../services/task-progress.service'
+import { Decimal } from '@prisma/client/runtime/library'
+import { IProjectResponse } from '../types/project.types'
 
 @ApiTags('projects')
 @ApiBearerAuth('access-token')
@@ -110,7 +112,7 @@ export class ProjectController {
 	@PublicRoute()
 	async getProjectById(
 		@Param('id', IdValidationPipe) id: number
-	): Promise<Project | null> {
+	): Promise<IProjectResponse | null> {
 		return this.projectService.getProjectById(id)
 	}
 
@@ -177,7 +179,7 @@ export class ProjectController {
 		@Query('category') category?: string,
 		@Query('page') page: string = '1',
 		@Query('limit') limit: string = '10'
-	): Promise<{ projects: Project[]; total: number }> {
+	): Promise<{ projects: IProjectResponse[]; total: number }> {
 		const parsedPage = parseInt(page)
 		const parsedLimit = parseInt(limit)
 		const tagsArray = Array.isArray(tags) ? tags : tags ? [tags] : []
@@ -242,7 +244,7 @@ export class ProjectController {
 		@Param('userId', IdValidationPipe) userId: number,
 		@Query('page') page: number = 1,
 		@Query('limit') limit: number = 10
-	): Promise<{ projects: Project[]; total: number }> {
+	): Promise<{ projects: IProjectResponse[]; total: number }> {
 		return this.projectService.getAllProjectsByUserId(
 			userId,
 			Number(page),
@@ -374,7 +376,7 @@ export class ProjectController {
 		@Param('id') id: string,
 		@Body() updateProjectDto: UpdateProjectDto,
 		@Req() req: Request
-	): Promise<Project> {
+	): Promise<{project: Project, minPrice: Decimal, maxPrice: Decimal}> {
 		const projectId = parseInt(id)
 		const user: User = req['user']
 		return this.projectService.updateProject(projectId, updateProjectDto, user)
@@ -468,7 +470,7 @@ export class ProjectController {
 		@Param('id') id: string,
 		@Body() updateProjectStatusDto: UpdateProjectStatusDto,
 		@Req() req: Request
-	): Promise<Project> {
+	): Promise<IProjectResponse> {
 		const projectId = parseInt(id)
 		const user: User = req['user']
 		return this.projectService.updateProjectStatus(

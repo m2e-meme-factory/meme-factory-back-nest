@@ -1,42 +1,38 @@
 import {
 	Injectable,
 	NotFoundException,
-	InternalServerErrorException,
+	InternalServerErrorException
 } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import { Prisma, Project, ProjectStatus, User, UserRole } from '@prisma/client'
 import { CreateProjectDto, UpdateProjectDto } from '../dto/project.dto'
 import { TelegramUpdate } from 'src/telegram/telegram.update'
-import { EventService } from 'src/event/event.service'
-import { IDetails } from '../types/project.types'
-import { checkProjectOwnership, checkUserRole } from '../project.utils'
+// import { EventService } from 'src/event/event.service'
+import { IDetails, IProjectResponse } from '../types/project.types'
+import {
+	checkProjectOwnership,
+	checkUserRole,
+	countProjectPrice
+} from '../project.utils'
 
 @Injectable()
 export class ProjectService {
 	constructor(
 		private readonly prisma: PrismaService,
-		private readonly telegramUpdate: TelegramUpdate,
-		private readonly eventService: EventService
+		private readonly telegramUpdate: TelegramUpdate
+		// private readonly eventService: EventService
 	) {}
-
 
 	async createProject(
 		createProjectDto: CreateProjectDto,
 		user: User
 	): Promise<Project> {
 		await checkUserRole(user, UserRole.advertiser)
-		const {
-			title,
-			description,
-			bannerUrl,
-			files,
-			tags,
-			category,
-			subtasks,
-			price
-		} = createProjectDto
+		const { title, description, bannerUrl, files, tags, category, subtasks } =
+			createProjectDto
 
 		try {
+			// const { minPrice, maxPrice } = countProjectPrice(subtasks)
 			const project = await this.prisma.project.create({
 				data: {
 					authorId: user.id,
@@ -45,8 +41,7 @@ export class ProjectService {
 					bannerUrl,
 					files,
 					tags,
-					category,
-					price
+					category
 				}
 			})
 
@@ -73,7 +68,7 @@ export class ProjectService {
 		}
 	}
 
-	async getProjectById(id: number): Promise<Project | null> {
+	async getProjectById(id: number): Promise<IProjectResponse | null> {
 		try {
 			const project = await this.prisma.project.findUnique({
 				where: { id },
@@ -82,13 +77,19 @@ export class ProjectService {
 						include: {
 							task: true
 						}
-					}
+					},
+					author: true
 				}
 			})
 			if (!project) {
 				throw new NotFoundException()
 			}
-			return project
+
+			const { minPrice, maxPrice } = countProjectPrice(
+				project.tasks.map(task => task.task)
+			)
+
+			return { project, minPrice, maxPrice }
 		} catch (error) {
 			if (error instanceof NotFoundException) {
 				throw new NotFoundException(`Проект с ID ${id} не найден`)
@@ -106,13 +107,13 @@ export class ProjectService {
 		category?: string,
 		page: number = 1,
 		limit: number = 10
-	): Promise<{ projects: Project[]; total: number }> {
+	): Promise<{ projects: IProjectResponse[]; total: number }> {
 		try {
 			const whereClause: Prisma.ProjectWhereInput = {}
 
 			whereClause.status = {
-				not: "closed"
-			};
+				not: 'closed'
+			}
 
 			if (tags && tags.length > 0) {
 				whereClause.tags = {
@@ -147,8 +148,20 @@ export class ProjectService {
 				}
 			})
 
+			const transformedProjects: IProjectResponse[] = projects.map(project => {
+				const { minPrice, maxPrice } = countProjectPrice(
+					project.tasks.map(task => task.task)
+				)
+
+				return {
+					project,
+					minPrice,
+					maxPrice
+				}
+			})
+
 			return {
-				projects,
+				projects: transformedProjects,
 				total
 			}
 		} catch (error) {
@@ -162,21 +175,33 @@ export class ProjectService {
 		userId: number,
 		page: number = 1,
 		limit: number = 10
-	) {
+	): Promise<{ projects: IProjectResponse[]; total: number }> {
 		const offset = (page - 1) * limit
 
 		try {
 			const [projects, total] = await this.prisma.$transaction([
 				this.prisma.project.findMany({
 					where: { authorId: userId },
-					include: { tasks: true },
+					include: { tasks: { include: { task: true } } },
 					skip: offset,
 					take: limit
 				}),
 				this.prisma.project.count({ where: { authorId: userId } })
 			])
 
-			return { projects, total }
+			const transformedProjects: IProjectResponse[] = projects.map(project => {
+				const { minPrice, maxPrice } = countProjectPrice(
+					project.tasks.map(task => task.task)
+				)
+
+				return {
+					project,
+					minPrice,
+					maxPrice
+				}
+			})
+
+			return { projects: transformedProjects, total }
 		} catch (error) {
 			throw new InternalServerErrorException(
 				'Ошибка при получении проектов пользователя',
@@ -189,7 +214,7 @@ export class ProjectService {
 		id: number,
 		updateProjectDto: UpdateProjectDto,
 		user: User
-	): Promise<Project> {
+	): Promise<IProjectResponse> {
 		await checkUserRole(user, UserRole.advertiser)
 		await checkProjectOwnership(id, user.id)
 		const {
@@ -200,7 +225,7 @@ export class ProjectService {
 			tags,
 			category,
 			subtasks,
-			price
+			deletedTasks
 		} = updateProjectDto
 
 		try {
@@ -208,7 +233,7 @@ export class ProjectService {
 				where: { id }
 			})
 			if (!projectExists) {
-				throw new NotFoundException(`Проект с ID ${id} не найден`)
+				throw new NotFoundException('Проект с ID ${id} не найден')
 			}
 
 			const project = await this.prisma.project.update({
@@ -219,43 +244,11 @@ export class ProjectService {
 					bannerUrl,
 					files,
 					tags,
-					category,
-					price
+					category
 				}
 			})
 
 			if (subtasks) {
-				const existingTasks = await this.prisma.task.findMany({
-					where: {
-						projects: {
-							some: {
-								projectId: id
-							}
-						}
-					}
-				})
-
-				const existingTaskIds = existingTasks.map(task => task.id)
-				const newTaskIds = subtasks
-					.map(task => task.id)
-					.filter(id => id !== undefined)
-
-				const tasksToDelete = existingTaskIds.filter(
-					taskId => !newTaskIds.includes(taskId)
-				)
-				if (tasksToDelete.length > 0) {
-					await this.prisma.projectTask.deleteMany({
-						where: {
-							projectId: id,
-							taskId: { in: tasksToDelete }
-						}
-					})
-
-					await this.prisma.task.deleteMany({
-						where: { id: { in: tasksToDelete } }
-					})
-				}
-
 				for (const subtask of subtasks) {
 					if (subtask.id) {
 						await this.prisma.task.update({
@@ -283,13 +276,43 @@ export class ProjectService {
 				}
 			}
 
-			return project
+			if (deletedTasks && deletedTasks.length > 0) {
+				for (const taskId of deletedTasks) {
+					// Проверяем, существует ли связь между проектом и задачей
+					const projectTask = await this.prisma.projectTask.findUnique({
+						where: {
+							projectId_taskId: {
+								projectId: id,
+								taskId: taskId,
+							},
+						},
+					});
+			
+					if (projectTask) {
+						await this.prisma.projectTask.delete({
+							where: {
+								projectId_taskId: {
+									projectId: id,
+									taskId: taskId,
+								},
+							},
+						});
+					} else {
+						console.warn(`Связь между проектом ${id} и задачей ${taskId} не найдена и не может быть удалена.`);
+					}
+				}
+			}
+			
+
+			const { minPrice, maxPrice } = countProjectPrice(subtasks)
+
+			return { project, minPrice, maxPrice }
 		} catch (error) {
 			if (error instanceof NotFoundException) {
 				throw error
 			}
 			throw new InternalServerErrorException(
-				'Ошибка при обновлении проекта:',
+				`Ошибка при обновлении проекта: ${error}`,
 				error
 			)
 		}
@@ -336,17 +359,26 @@ export class ProjectService {
 		id: number,
 		status: ProjectStatus,
 		user: User
-	): Promise<Project> {
+	): Promise<IProjectResponse> {
 		await checkUserRole(user, UserRole.advertiser)
 		await checkProjectOwnership(id, user.id)
 
 		try {
 			const project = await this.prisma.project.update({
 				where: { id },
-				data: { status }
+				data: { status },
+				include: {
+					tasks: {
+						include: { task: true }
+					}
+				}
 			})
 
-			return project
+			const { minPrice, maxPrice } = countProjectPrice(
+				project.tasks.map(task => task.task)
+			)
+
+			return { project, minPrice, maxPrice }
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Ошибка при обновлении статуса проекта: ${error}`
@@ -473,20 +505,27 @@ export class ProjectService {
 		telegramId: string
 	): Promise<void> {
 		const project = await this.getProjectById(projectId)
-		if (!project || !project.files) {
+		if (!project || !project.project.files) {
 			throw new NotFoundException(
 				'Проект или файлы для данного проекта не найдены.'
 			)
 		}
 
-		const files: string[] = Array.isArray(project.files)
-			? (project.files as string[])
-			: JSON.parse(project.files as any)
+		const files: string[] = Array.isArray(project.project.files)
+			? (project.project.files as string[])
+			: JSON.parse(project.project.files as any)
 
-		await this.telegramUpdate.sendFilesToUser(telegramId, files, project.title)
+		await this.telegramUpdate.sendFilesToUser(
+			telegramId,
+			files,
+			project.project.title
+		)
 	}
 
-	async calculateTotalProjectCost(user: User, projectId: number): Promise<number> {
+	async calculateTotalProjectCost(
+		user: User,
+		projectId: number
+	): Promise<number> {
 		try {
 			await checkUserRole(user, UserRole.advertiser)
 			await checkProjectOwnership(projectId, user.id)
@@ -495,7 +534,6 @@ export class ProjectService {
 				include: { events: true }
 			})
 
-			
 			let totalAmount = 0
 
 			projectProgressList.forEach(progress => {

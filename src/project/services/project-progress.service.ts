@@ -26,7 +26,14 @@ export class ProjectProgressService {
 					projectId
 				}
 			})
-			
+
+			if (
+				progressProject &&
+				progressProject.status === ProgressStatus.pending
+			) {
+				throw new Error('Заявка на проект уже подана')
+			}
+
 			if (!progressProject) {
 				progressProject = await this.prisma.progressProject.create({
 					data: {
@@ -35,7 +42,7 @@ export class ProjectProgressService {
 					}
 				})
 			}
-			
+
 			if (progressProject.status === ProgressStatus.rejected) {
 				progressProject = await this.prisma.progressProject.update({
 					where: {
@@ -46,7 +53,6 @@ export class ProjectProgressService {
 					}
 				})
 			}
-
 
 			await this.eventService.createEvent({
 				userId: user.id,
@@ -70,57 +76,55 @@ export class ProjectProgressService {
 		user: User,
 		projectId: number,
 		creatorId?: number
-	  ) {
+	) {
 		const progressProjects = await this.prisma.progressProject.findMany({
-		  where: { projectId, ...(creatorId && { userId: creatorId }) },
-		  include: { events: true, user: true },
-		});
-	  
-		return progressProjects.map((progressProject) => {
-		  const tasksStatus = progressProject.events.reduce(
-			(acc, event) => {
-			  if (event.details) {
-				const { taskId } = event.details as IDetails;
-	  
-				if (taskId !== undefined) {
-				  switch (event.eventType) {
-					case 'TASK_COMPLETED':
-					  acc.approvedTasks.add(taskId);
-					  acc.appliedTasks.delete(taskId);
-					  acc.rejectedTasks.delete(taskId);
-					  break;
-					case 'TASK_SUBMIT':
-					  acc.appliedTasks.add(taskId);
-					  acc.rejectedTasks.delete(taskId);
-					  break;
-					case 'TASK_REJECTED':
-					  if (acc.appliedTasks.has(taskId)) {
-						acc.rejectedTasks.add(taskId);
-						acc.appliedTasks.delete(taskId);
-					  }
-					  break;
-				  }
+			where: { projectId, ...(creatorId && { userId: creatorId }) },
+			include: { events: true, user: true }
+		})
+
+		return progressProjects.map(progressProject => {
+			const tasksStatus = progressProject.events.reduce(
+				(acc, event) => {
+					if (event.details) {
+						const { taskId } = event.details as IDetails
+
+						if (taskId !== undefined) {
+							switch (event.eventType) {
+								case 'TASK_COMPLETED':
+									acc.approvedTasks.add(taskId)
+									acc.appliedTasks.delete(taskId)
+									acc.rejectedTasks.delete(taskId)
+									break
+								case 'TASK_SUBMIT':
+									acc.appliedTasks.add(taskId)
+									acc.rejectedTasks.delete(taskId)
+									break
+								case 'TASK_REJECTED':
+									if (acc.appliedTasks.has(taskId)) {
+										acc.rejectedTasks.add(taskId)
+										acc.appliedTasks.delete(taskId)
+									}
+									break
+							}
+						}
+					}
+					return acc
+				},
+				{
+					appliedTasks: new Set<number>(),
+					approvedTasks: new Set<number>(),
+					rejectedTasks: new Set<number>()
 				}
-			  }
-			  return acc;
-			},
-			{
-			  appliedTasks: new Set<number>(),
-			  approvedTasks: new Set<number>(),
-			  rejectedTasks: new Set<number>(),
+			)
+
+			return {
+				...progressProject,
+				appliedTasks: Array.from(tasksStatus.appliedTasks),
+				approvedTasks: Array.from(tasksStatus.approvedTasks),
+				rejectedTasks: Array.from(tasksStatus.rejectedTasks)
 			}
-		  );
-	  
-		  return {
-			...progressProject,
-			appliedTasks: Array.from(tasksStatus.appliedTasks),
-			approvedTasks: Array.from(tasksStatus.approvedTasks),
-			rejectedTasks: Array.from(tasksStatus.rejectedTasks),
-		  };
-		});
-	  }
-	  
-	  
+		})
+	}
 
 	async getAllProjectByCreatorId(creatorId: number) {
 		const progressProjects = await this.prisma.progressProject.findMany({

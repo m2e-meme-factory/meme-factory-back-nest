@@ -10,7 +10,7 @@ import { EventType, ProgressStatus, User, UserRole } from '@prisma/client'
 import { EventService } from 'src/event/event.service'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { checkUserRole } from '../project.utils'
-import { IDetails } from '../types/project.types'
+// import { IDetails } from '../types/project.types'
 import { TransactionService } from 'src/transaction/transaction.service'
 import { ProjectProgressService } from './project-progress.service'
 
@@ -47,30 +47,30 @@ export class TaskProgressService {
 				throw new ConflictException('Заявка на проект не подана')
 			}
 
-			const hasSubmitted = existingProgress.events.some((item, index) => {
-				const details = item.details as IDetails | undefined
-				if (
-					details?.taskId === taskId &&
-					item.eventType === EventType.TASK_SUBMIT
-				) {
-					for (let i = index + 1; i < existingProgress.events.length; i++) {
-						const nextEvent = existingProgress.events[i]
-						const nextDetails = nextEvent.details as IDetails | undefined
-						if (
-							nextDetails?.taskId === taskId &&
-							nextEvent.eventType === EventType.TASK_REJECTED
-						) {
-							return false
-						}
-					}
-					return true
-				}
-				return false
-			})
+			// const hasSubmitted = existingProgress.events.some((item, index) => {
+			// 	const details = item.details as IDetails | undefined
+			// 	if (
+			// 		details?.taskId === taskId &&
+			// 		item.eventType === EventType.TASK_SUBMIT
+			// 	) {
+			// 		for (let i = index + 1; i < existingProgress.events.length; i++) {
+			// 			const nextEvent = existingProgress.events[i]
+			// 			const nextDetails = nextEvent.details as IDetails | undefined
+			// 			if (
+			// 				nextDetails?.taskId === taskId &&
+			// 				nextEvent.eventType === EventType.TASK_REJECTED
+			// 			) {
+			// 				return false
+			// 			}
+			// 		}
+			// 		return true
+			// 	}
+			// 	return false
+			// })
 
-			if (hasSubmitted) {
-				throw new ConflictException('Заявка на задание уже подана')
-			}
+			// if (hasSubmitted) {
+			// 	throw new ConflictException('Заявка на задание уже подана')
+			// }
 
 			const event = await this.eventService.createEvent({
 				userId: user.id,
@@ -97,6 +97,7 @@ export class TaskProgressService {
 		user: User,
 		taskId: number,
 		creatorId: number,
+		eventId: number,
 		message?: string
 	) {
 		try {
@@ -146,7 +147,8 @@ export class TaskProgressService {
 						fromUserId: user.id,
 						toUserId: creatorId,
 						taskId: taskId,
-						projectId: projectTask.projectId
+						projectId: projectTask.projectId,
+						type: 'PAYMENT'
 					})
 
 					const event = await this.eventService.createEvent({
@@ -160,10 +162,11 @@ export class TaskProgressService {
 						details: {
 							taskId: taskId,
 							transactionId: transaction.transaction.id,
-							amount: transaction.transaction.amount
+							amount: transaction.transaction.amount,
+							eventId: eventId
 						}
 					})
-
+					
 					if (existingProgress.status === ProgressStatus.pending) {
 						await this.projectProgressService.updateProjectProgressStatus(
 							user,
@@ -198,6 +201,7 @@ export class TaskProgressService {
 		user: User,
 		taskId: number,
 		creatorId: number,
+		eventId: number,
 		message?: string
 	) {
 		checkUserRole(user, UserRole.advertiser)
@@ -219,7 +223,7 @@ export class TaskProgressService {
 					where: {
 						projectId: projectTask.projectId,
 						userId: creatorId,
-						status: ProgressStatus.accepted
+						status: { in: [ProgressStatus.accepted, ProgressStatus.pending] }
 					}
 				})
 
@@ -236,7 +240,8 @@ export class TaskProgressService {
 					message: message,
 					progressProjectId: existingProgress.id,
 					details: {
-						taskId: taskId
+						taskId: taskId,
+						eventId: eventId
 					}
 				})
 

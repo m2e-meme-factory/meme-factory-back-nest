@@ -1,4 +1,5 @@
 // telegram.update.ts
+import { UserRole } from '@prisma/client';
 import { Update, Ctx, Start, InjectBot } from 'nestjs-telegraf'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { UserService } from 'src/user/user.service'
@@ -17,11 +18,17 @@ export class TelegramUpdate {
 	@PublicRoute()
 	async startCommand(@Ctx() ctx: Context) {
 		const messageText = ctx.text
-		const inviterRefCode = messageText.split(' ')[1]
+		console.log(ctx)
+		console.log(messageText)
+		const params = messageText.split(' ')[1]?.split(':')
+		const inviterRefCode = params?.[0]
+		const metaTag = params?.[1]
 		const user = await this.userService.findOrCreateUser(
 			ctx.from.id,
 			ctx.from.username,
-			inviterRefCode
+			inviterRefCode,
+			UserRole.creator,
+			metaTag
 		)
 		const webAppUrl = process.env.APP_URL
 

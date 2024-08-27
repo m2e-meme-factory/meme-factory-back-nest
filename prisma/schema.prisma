@@ -41,6 +41,10 @@ model User {
   transactionsReceived Transaction[] @relation("ToUser")
 
   ProgressProject ProgressProject[]
+
+  MetaTag MetaTag[]
+
+  @@map("users")
 }
 
 model UserInfo {
@@ -62,7 +66,6 @@ model Project {
   tags        String[]
   category    String
   subtasks    Task[]
-  price       Decimal
   author      User          @relation(fields: [authorId], references: [id])
   tasks       ProjectTask[]
   status      ProjectStatus @default(draft)
@@ -101,16 +104,24 @@ model UndelitableMessage {
 }
 
 model Transaction {
-  id         Int      @id @default(autoincrement())
+  id         Int             @id @default(autoincrement())
   projectId  Int
   taskId     Int
   fromUserId Int
   toUserId   Int
   amount     Decimal
-  createdAt  DateTime @default(now())
+  createdAt  DateTime        @default(now())
+  type       TransactionType @default(PAYMENT)
 
   fromUser User @relation("FromUser", fields: [fromUserId], references: [id])
   toUser   User @relation("ToUser", fields: [toUserId], references: [id])
+}
+
+enum TransactionType {
+  PAYMENT // Оплата за проект
+  DEPOSIT // Пополнение баланса
+  WITHDRAWAL // Вывод средств
+  SYSTEM // Системные транзакции за ивенты
 }
 
 model ProgressProject {
@@ -172,4 +183,15 @@ enum EventType {
   DISPUTE_RESOLVED
   USER_MESSAGE
   RATING_GIVEN
+}
+
+model MetaTag {
+  id        Int      @id @default(autoincrement())
+  tag       String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId], name: "userId_idx")
+  @@map("meta_tags")
 }

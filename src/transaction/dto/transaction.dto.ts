@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
+import { TransactionType } from '@prisma/client'
 import { Decimal } from '@prisma/client/runtime/library'
-import { IsInt, IsNotEmpty, IsOptional, IsDecimal } from 'class-validator'
+import { IsInt, IsNotEmpty, IsOptional, IsDecimal, IsEnum } from 'class-validator'
 
 export class CreateTransactionDto {
 	@ApiProperty()
@@ -32,6 +33,11 @@ export class CreateTransactionDto {
 	@IsOptional()
 	@IsNotEmpty()
 	createdAt?: Date
+
+	@ApiProperty({ enum: TransactionType })
+	@IsEnum(TransactionType)
+	@IsNotEmpty()
+	type: TransactionType
 }
 
 export class UpdateTransactionDto {
@@ -63,4 +69,9 @@ export class UpdateTransactionDto {
 	@ApiProperty()
 	@IsOptional()
 	createdAt?: Date
+
+	@ApiProperty({ enum: TransactionType })
+	@IsEnum(TransactionType)
+	@IsOptional()
+	type?: TransactionType
 }

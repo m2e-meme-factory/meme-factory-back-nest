@@ -1,4 +1,5 @@
-import { EventType } from "@prisma/client";
+import { EventType, Project } from "@prisma/client";
+import { Decimal } from "@prisma/client/runtime/library";
 
 export interface IEvent {
     id: number;
@@ -16,3 +17,8 @@ export interface IDetails {
     amount?: number
 }
 
+export interface IProjectResponse {
+    project: Project
+    minPrice: Decimal
+    maxPrice: Decimal
+}
