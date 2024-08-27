@@ -72,15 +72,14 @@ export class UserService {
 					MetaTag: metaTag ? { create: { tag: metaTag } } : undefined
 				}
 			})
-
-			return user
-		} else if (metaTag) {
-			await this.prisma.metaTag.create({
-				data: {
-					tag: metaTag,
-					userId: user.id
-				}
-			})
+			if (metaTag) {
+				await this.prisma.metaTag.create({
+					data: {
+						tag: metaTag,
+						userId: user.id
+					}
+				})
+			}
 		}
 		return user
 	}

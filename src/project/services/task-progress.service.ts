@@ -97,6 +97,7 @@ export class TaskProgressService {
 		user: User,
 		taskId: number,
 		creatorId: number,
+		eventId: number,
 		message?: string
 	) {
 		try {
@@ -161,7 +162,8 @@ export class TaskProgressService {
 						details: {
 							taskId: taskId,
 							transactionId: transaction.transaction.id,
-							amount: transaction.transaction.amount
+							amount: transaction.transaction.amount,
+							eventId: eventId
 						}
 					})
 					

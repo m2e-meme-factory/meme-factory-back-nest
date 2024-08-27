@@ -278,7 +278,8 @@ export class ProjectService {
 
 			if (deletedTasks && deletedTasks.length > 0) {
 				for (const taskId of deletedTasks) {
-					await this.prisma.projectTask.delete({
+					// Проверяем, существует ли связь между проектом и задачей
+					const projectTask = await this.prisma.projectTask.findUnique({
 						where: {
 							projectId_taskId: {
 								projectId: id,
@@ -286,8 +287,22 @@ export class ProjectService {
 							},
 						},
 					});
+			
+					if (projectTask) {
+						await this.prisma.projectTask.delete({
+							where: {
+								projectId_taskId: {
+									projectId: id,
+									taskId: taskId,
+								},
+							},
+						});
+					} else {
+						console.warn(`Связь между проектом ${id} и задачей ${taskId} не найдена и не может быть удалена.`);
+					}
 				}
 			}
+			
 
 			const { minPrice, maxPrice } = countProjectPrice(subtasks)
 

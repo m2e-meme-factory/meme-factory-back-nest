@@ -18,6 +18,8 @@ export class TelegramUpdate {
 	@PublicRoute()
 	async startCommand(@Ctx() ctx: Context) {
 		const messageText = ctx.text
+		console.log(ctx)
+		console.log(messageText)
 		const params = messageText.split(' ')[1]?.split(':')
 		const inviterRefCode = params?.[0]
 		const metaTag = params?.[1]
