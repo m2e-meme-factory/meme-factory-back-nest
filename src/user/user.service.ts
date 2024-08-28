@@ -51,16 +51,20 @@ export class UserService {
 		role: 'creator' | 'advertiser' = 'creator',
 		metaTag?: string
 	) {
-		const user = await this.prisma.user.findUnique({
+		let isFounded = false
+		let user = await this.prisma.user.findUnique({
 			where: {
 				telegramId: telegramId.toString()
 			}
 		})
+		if(user) {
+			isFounded = true
+		}
 
 		if (!user) {
 			const refCode = uuidv4()
 
-			const user = await this.prisma.user.create({
+			user = await this.prisma.user.create({
 				data: {
 					telegramId: telegramId.toString(),
 					username: username || undefined,
@@ -72,13 +76,16 @@ export class UserService {
 					MetaTag: metaTag ? { create: { tag: metaTag } } : undefined
 				}
 			})
-			// const userInfo = 
+			// const userInfo =
 			await this.prisma.userInfo.create({
 				data: {
 					userId: user.id
 				}
 			})
-			if (metaTag) {
+			const existingMetaTag = await this.prisma.metaTag.findFirst({
+				where: { tag: metaTag, userId: user.id }
+			})
+			if (!existingMetaTag) {
 				await this.prisma.metaTag.create({
 					data: {
 						tag: metaTag,
@@ -87,7 +94,7 @@ export class UserService {
 				})
 			}
 		}
-		return user
+		return {user,isFounded}
 	}
 
 	async isUserVerified(userId: string): Promise<{ isUser: boolean }> {
