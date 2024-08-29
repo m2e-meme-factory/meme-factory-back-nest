@@ -60,7 +60,7 @@ export class TelegramUpdate {
 		const message = files
 			.map(
 				fileName =>
-					`- <a href="${ORIGIN_URL}/${fileName}">${fileName.substring(37)}</a>`
+					`- <a href="${ORIGIN_URL}/download/${fileName}">${fileName.substring(37)}</a>`
 			)
 			.join('\n')
 		await this.bot.telegram.sendMessage(

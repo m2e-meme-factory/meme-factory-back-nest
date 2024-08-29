@@ -77,7 +77,7 @@ export class FileController {
 		return this.fileService.saveFiles(files, folder)
 	}
 
-	@Get(':fileurl')
+	@Get('download/:fileurl')
 	async downloadFile(
 		@Param('fileurl') fileurl: string,
 		@Res() res: Response
