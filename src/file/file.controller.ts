@@ -11,6 +11,7 @@ import {
 	UploadedFiles,
 	UseInterceptors
 } from '@nestjs/common'
+import * as appRoot from 'app-root-path'
 
 import { Response } from 'express'
 import { FileService } from './file.service'
@@ -26,7 +27,6 @@ import {
 	ApiTags
 } from '@nestjs/swagger'
 import { join } from 'path'
-
 
 @Controller('files')
 @ApiTags('files')
@@ -84,7 +84,7 @@ export class FileController {
 		@Res() res: Response
 	) {
 		try {
-			const filePath = join(__dirname, '..', '..', 'uploads', 'projects', filename)
+			const filePath = join(appRoot.path, 'uploads', 'projects', filename)
 
 			res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
 
