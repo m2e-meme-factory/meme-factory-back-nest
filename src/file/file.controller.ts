@@ -84,7 +84,7 @@ export class FileController {
 		@Res() res: Response
 	) {
 		try {
-			const filePath = join(appRoot.path, 'uploads', 'projects', filename)
+			const filePath = join(appRoot.path, '..', 'uploads', 'projects', filename)
 
 			res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
 
