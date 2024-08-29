@@ -18,9 +18,7 @@ export class TelegramUpdate {
 	@PublicRoute()
 	async startCommand(@Ctx() ctx: Context) {
 		const messageText = ctx.text
-		console.log(ctx)
-		console.log(messageText)
-		const params = messageText.split(' ')[1]?.split(':')
+		const params = messageText.split(' ')[1]?.split('_')
 		const inviterRefCode = params?.[0]
 		const metaTag = params?.[1]
 		const user = await this.userService.findOrCreateUser(
@@ -44,10 +42,8 @@ export class TelegramUpdate {
 				]
 			}
 		})
-
-		if (inviterRefCode && !user.inviterRefCode) {
+		if (inviterRefCode && user.isFounded === false) {
 			const inviter = await this.userService.getUserByRefCode(inviterRefCode)
-
 			if (inviter) {
 				await this.bot.telegram.sendMessage(
 					inviter.telegramId,

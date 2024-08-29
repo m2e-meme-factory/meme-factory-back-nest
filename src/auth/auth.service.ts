@@ -26,7 +26,7 @@ export class AuthService {
 				parsedData.user.id,
 				parsedData.user.username
 			)
-			const payload = { id: user.id }
+			const payload = { id: user.user.id }
 
 			return {
 				user: user,

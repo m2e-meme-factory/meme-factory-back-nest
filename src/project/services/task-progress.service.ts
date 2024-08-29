@@ -161,8 +161,8 @@ export class TaskProgressService {
 						progressProjectId: existingProgress.id,
 						details: {
 							taskId: taskId,
-							transactionId: transaction.transaction.id,
-							amount: transaction.transaction.amount,
+							transactionId: transaction.id,
+							amount: transaction.amount,
 							eventId: eventId
 						}
 					})
