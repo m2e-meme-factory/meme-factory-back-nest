@@ -84,8 +84,8 @@ export class FileController {
 	) {
 		try {
 			const filePath = join(process.cwd(), 'uploads', 'projects', filename);
-			console.log(filePath)
 			res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+			res.setHeader('Content-Type', `application/octet-stream}"`)
 
 			return res.sendFile(filePath)
 		} catch (err) {
