@@ -5,7 +5,7 @@ import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { UserService } from 'src/user/user.service'
 import { Context, Telegraf } from 'telegraf'
 
-const ORIGIN_URL = process.env.HOST_URL + "/uploads/projects";
+const ORIGIN_URL = process.env.HOST_URL;
 
 @Update()
 export class TelegramUpdate {
@@ -60,7 +60,7 @@ export class TelegramUpdate {
 		const message = files
 			.map(
 				fileName =>
-					`- <a href="${ORIGIN_URL}/download/${fileName}">${fileName.substring(37)}</a>`
+					`- <a href="${ORIGIN_URL}/files/download/${fileName}">${fileName.substring(37)}</a>`
 			)
 			.join('\n')
 		await this.bot.telegram.sendMessage(
