@@ -4,6 +4,7 @@ import { Update, Ctx, Start, InjectBot } from 'nestjs-telegraf'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { UserService } from 'src/user/user.service'
 import { Context, Telegraf } from 'telegraf'
+import { InputFile } from 'telegraf/typings/core/types/typegram';
 
 const ORIGIN_URL = process.env.HOST_URL;
 
@@ -57,24 +58,25 @@ export class TelegramUpdate {
 		files: string[],
 		projectTitle: string = undefined
 	): Promise<void> {
-		const message = files
-			.map(
-				fileName =>
-					`- <a href="${ORIGIN_URL}/files/download/${fileName}">${fileName.substring(37)}</a>`
-			)
-			.join('\n')
-		await this.bot.telegram.sendMessage(
-			telegramId,
-			`
-Download attachments for project <b>${projectTitle || ''}</b> with this links:\n
-${message}
-`,
-			{
-				parse_mode: 'HTML',
-				link_preview_options: {
-					is_disabled: true
-				}
+		const message = `Download attachments for project <b>${projectTitle || ''}</b>:\n`;
+	
+		await this.bot.telegram.sendMessage(telegramId, message, {
+			parse_mode: 'HTML',
+			link_preview_options: {
+				is_disabled: true
 			}
-		)
+		});
+	
+		const documents: InputFile[] = files.map(fileName => ({
+			url: `${ORIGIN_URL}/files/download/${fileName}`,
+			filename: fileName.substring(37)
+		}));
+	
+		for (const document of documents) {
+			await this.bot.telegram.sendDocument(telegramId, document, {
+				caption: `Files for project: ${projectTitle || ''}`,
+				parse_mode: 'HTML'
+			});
+		}
 	}
 }
