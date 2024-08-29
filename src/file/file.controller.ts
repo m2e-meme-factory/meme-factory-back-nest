@@ -78,6 +78,7 @@ export class FileController {
 	}
 
 	@Get('download/:fileurl')
+	@PublicRoute()
 	async downloadFile(
 		@Param('fileurl') fileurl: string,
 		@Res() res: Response
