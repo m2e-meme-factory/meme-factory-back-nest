@@ -1,7 +1,7 @@
 import { Body, Controller, Post, Req } from '@nestjs/common'
 import { TonService } from './ton.service'
 import { UpdateUserInfoDto } from 'src/user-info/dto/user-info.dto'
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 
 @ApiTags('ton')
 @Controller('ton')
@@ -15,6 +15,7 @@ export class TonController {
 		description: 'TON Wallet Address successfully connected.'
 	})
 	@ApiResponse({ status: 500, description: 'Internal Server Error.' })
+	@ApiBody({type: UpdateUserInfoDto})
 	async connect(
 		@Body() updateUserInfoDto: UpdateUserInfoDto,
 		@Req() req: Request
