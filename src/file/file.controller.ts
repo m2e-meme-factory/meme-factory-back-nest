@@ -1,15 +1,32 @@
 import {
 	Controller,
+	Get,
 	HttpCode,
+	HttpException,
+	HttpStatus,
+	Param,
 	Post,
 	Query,
+	Res,
 	UploadedFiles,
 	UseInterceptors
 } from '@nestjs/common'
+
+import { Response } from 'express'
 import { FileService } from './file.service'
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
+import {
+	ApiBearerAuth,
+	ApiBody,
+	ApiConsumes,
+	ApiOperation,
+	ApiQuery,
+	ApiResponse,
+	ApiTags
+} from '@nestjs/swagger'
+import { join } from 'path'
+
 
 @Controller('files')
 @ApiTags('files')
@@ -58,5 +75,21 @@ export class FileController {
 		@Query('folder') folder?: string
 	) {
 		return this.fileService.saveFiles(files, folder)
+	}
+
+	@Get(':fileurl')
+	async downloadFile(
+		@Param('fileurl') fileurl: string,
+		@Res() res: Response
+	) {
+		try {
+			const filePath = join(__dirname, '..', 'uploads', fileurl)
+
+			res.setHeader('Content-Disposition', `attachment; filename="${fileurl}"`)
+
+			return res.sendFile(filePath)
+		} catch (err) {
+			throw new HttpException('File not found', HttpStatus.NOT_FOUND)
+		}
 	}
 }
