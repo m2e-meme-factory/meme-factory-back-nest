@@ -11,7 +11,6 @@ import {
 	UploadedFiles,
 	UseInterceptors
 } from '@nestjs/common'
-import * as appRoot from 'app-root-path'
 
 import { Response } from 'express'
 import { FileService } from './file.service'
@@ -84,8 +83,8 @@ export class FileController {
 		@Res() res: Response
 	) {
 		try {
-			const filePath = join(appRoot.path, '..', 'uploads', 'projects', filename)
-
+			const filePath = join(process.cwd(), 'uploads', 'projects', filename);
+			console.log(filePath)
 			res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
 
 			return res.sendFile(filePath)
