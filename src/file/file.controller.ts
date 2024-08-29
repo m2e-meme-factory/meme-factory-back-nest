@@ -77,16 +77,16 @@ export class FileController {
 		return this.fileService.saveFiles(files, folder)
 	}
 
-	@Get('download/:fileurl')
+	@Get('download/:filename')
 	@PublicRoute()
 	async downloadFile(
-		@Param('fileurl') fileurl: string,
+		@Param('filename') filename: string,
 		@Res() res: Response
 	) {
 		try {
-			const filePath = join(__dirname, '..', 'uploads', fileurl)
+			const filePath = join(__dirname, '..', '..', 'uploads', 'projects', filename)
 
-			res.setHeader('Content-Disposition', `attachment; filename="${fileurl}"`)
+			res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
 
 			return res.sendFile(filePath)
 		} catch (err) {
