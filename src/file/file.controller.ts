@@ -83,8 +83,8 @@ export class FileController {
 		@Res() res: Response
 	) {
 		try {
-			const filePath = path.resolve(__dirname, '..', 'uploads', filename);
-			console.log(filePath)
+			const filePath = path.resolve(__dirname, '..', '..', 'uploads', filename);
+			console.error(filePath)
 			res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
 
 			return res.sendFile(filePath)
