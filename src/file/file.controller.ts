@@ -25,7 +25,7 @@ import {
 	ApiResponse,
 	ApiTags
 } from '@nestjs/swagger'
-import path, { join } from 'path'
+import { join } from 'path'
 
 @Controller('files')
 @ApiTags('files')
@@ -83,8 +83,8 @@ export class FileController {
 		@Res() res: Response
 	) {
 		try {
-			const filePath = path.resolve(__dirname, '..', '..', 'uploads', filename);
-			console.error(filePath)
+			const filePath = join(process.cwd(), 'uploads', 'projects', filename);
+			console.log(filePath)
 			res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
 
 			return res.sendFile(filePath)
