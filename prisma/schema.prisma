@@ -42,14 +42,15 @@ model User {
 
   ProgressProject ProgressProject[]
 
-  MetaTag MetaTag[]
+  MetaTag  MetaTag[]
+  AutoTask AutoTask[]
 
   @@map("users")
 }
 
 model UserInfo {
   id               Int     @id @default(autoincrement())
-  userId           Int  @unique
+  userId           Int     @unique
   name             String?
   phoneNumber      String?
   email            String?
@@ -88,6 +89,18 @@ model Task {
   Project Project[]
 }
 
+model AutoTask {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  reward      Decimal
+  url         String?
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  isConfirmed Boolean @default(false)
+  createdAt   DateTime @default(now())
+}
+
 model ProjectTask {
   projectId Int
   taskId    Int
@@ -106,7 +119,7 @@ model UndelitableMessage {
 
 model Transaction {
   id         Int             @id @default(autoincrement())
-  projectId  Int
+  projectId  Int?
   taskId     Int
   fromUserId Int?
   toUserId   Int
