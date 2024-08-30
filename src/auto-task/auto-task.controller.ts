@@ -8,7 +8,8 @@ import {
 	ParseIntPipe,
 	HttpCode,
 	HttpStatus,
-  Req
+  Req,
+  Query
 } from '@nestjs/common'
 import {
 	ApiTags,
@@ -16,15 +17,17 @@ import {
 	ApiResponse,
 	ApiParam,
 	ApiBody,
-	ApiBearerAuth
+	ApiBearerAuth,
+  ApiQuery
 } from '@nestjs/swagger'
 import { AutoTaskService } from './auto-task.service'
 import { AutoTask } from '@prisma/client'
-import { CreateAutoTaskDto } from './dto/create-auto-task.dto'
+import { CreateAutoTaskDto, GetAutoTaskDto } from './dto/create-auto-task.dto'
+import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 
 @ApiBearerAuth('access-token')
-@ApiTags('autotasks')
-@Controller('autotasks')
+@ApiTags('autotask-applications')
+@Controller('autotask-applications')
 export class AutoTaskController {
 	constructor(private readonly autoTaskService: AutoTaskService) {}
 
@@ -33,10 +36,12 @@ export class AutoTaskController {
 	@ApiResponse({
 		status: 200,
 		description: 'Return all auto tasks.',
-		type: [CreateAutoTaskDto]
+		type: [GetAutoTaskDto]
 	})
-	async getAllAutoTasks(): Promise<AutoTask[]> {
-		return this.autoTaskService.getAllAutoTasks()
+  @ApiQuery({ name: 'userId', required: false, type: Number, example: 1, description: 'Фильтр по user ID (опционально)' })
+  @PublicRoute()
+	async getAllAutoTasks(@Query('userId') userId?: string): Promise<AutoTask[]> {
+		return this.autoTaskService.getAllAutoTasks(Number(userId))
 	}
 
 	@Get(':id')
@@ -45,9 +50,10 @@ export class AutoTaskController {
 	@ApiResponse({
 		status: 200,
 		description: 'Return the auto task.',
-		type: CreateAutoTaskDto
+		type: GetAutoTaskDto
 	})
 	@ApiResponse({ status: 404, description: 'Task not found' })
+  @PublicRoute()
 	async getAutoTaskById(
 		@Param('id', ParseIntPipe) id: number
 	): Promise<AutoTask | null> {

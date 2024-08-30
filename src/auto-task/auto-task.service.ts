@@ -17,8 +17,10 @@ export class AutoTaskService {
 		private readonly transactionService: TransactionService
 	) {}
 
-	async getAllAutoTasks(): Promise<AutoTask[]> {
-		return await this.prisma.autoTask.findMany()
+	async getAllAutoTasks(userId?: number): Promise<AutoTask[]> {
+		return await this.prisma.autoTask.findMany({
+			where: userId ? { userId } : {}
+		})
 	}
 
 	async getAutoTaskById(id: number): Promise<AutoTask | null> {
@@ -31,7 +33,7 @@ export class AutoTaskService {
 	async applyForTask(dto: CreateAutoTaskDto, user: User): Promise<AutoTask> {
 		checkUserRole(user, UserRole.creator)
 
-		const { title, description, reward, url, userId, taskId} = dto
+		const { title, description, reward, url, userId, taskId } = dto
 
 		const task = await this.prisma.autoTask.create({
 			data: {
