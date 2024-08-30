@@ -25,7 +25,8 @@ export const contentData: {
 		caption: `
 Meme Factory - первая Meme-To-Earn платформа, где люди постят мемы и зарабатывают на этом,
 а бренды повышают узнаваемость за счет рекламных интеграций.
-        `
+        `,
+        contentUrl: `${process.env.HOST_URL}/uploads/default/d151964d-2d37-4d8a-9483-ae303adcad37_meme-factory-preview.mp4`
 	},
 
 	airdrop: {
@@ -71,7 +72,7 @@ Meme Factory - первая Meme-To-Earn платформа, где люди п�
 Нажми "Запустить Фабрику" и мы начнем
         `,
 		contentUrl:
-			`${process.env.HOST_URL}/uploads/default/9073e0ad-9337-41e2-b2da-4eff8a7758d6_first advertiser.jpg`,
+			`${process.env.HOST_URL}/uploads/default/eefd6e10-2b90-4f2d-ab9b-ab4ee1a2592f_first-advertiser.jpg`,
 		buttonText: 'Запустить Фабрику'
 	}
 }
