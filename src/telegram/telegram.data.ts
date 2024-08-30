@@ -18,7 +18,7 @@ export const contentData: {
 С нами ты можешь стать мощным инфлюенсером и продвигать бренды со всего мира!
         `,
 		contentUrl:
-			`${process.env.APP_URL}/uploads/default/3d2547be-a98a-401f-b7fe-3d2304725bb0_first-image.jpg`
+			`${process.env.HOST_URL}/uploads/default/3d2547be-a98a-401f-b7fe-3d2304725bb0_first-image.jpg`
 	},
 
 	memeFactory: {
@@ -38,7 +38,7 @@ Meme Factory - первая Meme-To-Earn платформа, где люди п�
 И участвуй в эйрдроп
         `,
 		contentUrl:
-			`${process.env.APP_URL}/uploads/default/0ee3df42-66a3-4765-9437-35321a2d4e74_airdrop.jpg`
+			`${process.env.HOST_URL}/uploads/default/0ee3df42-66a3-4765-9437-35321a2d4e74_airdrop.jpg`
 	},
 
 	sky: {
@@ -54,7 +54,7 @@ Meme Factory - первая Meme-To-Earn платформа, где люди п�
 
 Нажми "Начинаем" и я передам тебя твоему первому заказчику!
         `,
-		contentUrl: `${process.env.APP_URL}/uploads/default/3e15e586-3b00-4bfe-bac1-3f80fdd51786_sky.jpg`,
+		contentUrl: `${process.env.HOST_URL}/uploads/default/3e15e586-3b00-4bfe-bac1-3f80fdd51786_sky.jpg`,
 		buttonText: 'Начинаем'
 	},
 
@@ -71,7 +71,7 @@ Meme Factory - первая Meme-To-Earn платформа, где люди п�
 Нажми "Запустить Фабрику" и мы начнем
         `,
 		contentUrl:
-			`${process.env.APP_URL}/uploads/default/9073e0ad-9337-41e2-b2da-4eff8a7758d6_first advertiser.jpg`,
+			`${process.env.HOST_URL}/uploads/default/9073e0ad-9337-41e2-b2da-4eff8a7758d6_first advertiser.jpg`,
 		buttonText: 'Запустить Фабрику'
 	}
 }
