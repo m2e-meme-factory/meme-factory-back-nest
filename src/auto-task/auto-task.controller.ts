@@ -9,11 +9,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { AutoTaskService } from './auto-task.service';
 import { AutoTask } from '@prisma/client';
 import { CreateAutoTaskDto } from './dto/create-auto-task.dto';
 
+@ApiBearerAuth('access-token')
 @ApiTags('autotasks')
 @Controller('autotasks')
 export class AutoTaskController {
