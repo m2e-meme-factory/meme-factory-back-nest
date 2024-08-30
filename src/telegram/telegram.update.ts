@@ -5,7 +5,7 @@ import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { UserService } from 'src/user/user.service'
 import { Context, Telegraf } from 'telegraf'
 import { InputFile } from 'telegraf/typings/core/types/typegram'
-import { caption, skyImageUrl } from './telegram.data'
+import { contentData, IContentSection } from './telegram.data'
 
 const ORIGIN_URL = process.env.HOST_URL
 
@@ -16,6 +16,8 @@ export class TelegramUpdate {
 		private readonly userService: UserService
 	) {}
 
+	@Start()
+	@PublicRoute()
 	@Start()
 	@PublicRoute()
 	async startCommand(@Ctx() ctx: Context) {
@@ -32,38 +34,13 @@ export class TelegramUpdate {
 		)
 		const webAppUrl = process.env.APP_URL
 
+		if (user.isFounded) {
+			await this.sendContent(ctx, contentData.sky, webAppUrl)
+		} else {
+			await this.sendContentSequence(ctx, webAppUrl)
+		}
 
-		await ctx.replyWithPhoto(
-			{ url: skyImageUrl },
-			{
-				caption,
-				reply_markup: {
-					inline_keyboard: [
-						[
-							{
-								text: 'Начинаем!',
-								web_app: { url: webAppUrl + '/projects' }
-							}
-						]
-					]
-				}
-			}
-		)
-
-		// await ctx.reply(`Приветствуем, ${ctx.from.first_name}!`, {
-		// 	reply_markup: {
-		// 		inline_keyboard: [
-		// 			[
-		// 				{
-		// 					text: 'Открыть приложение',
-		// 					web_app: { url: webAppUrl + '/projects' }
-		// 				}
-		// 			]
-		// 		]
-		// 	}
-		// })
-
-		if (inviterRefCode && user.isFounded === false) {
+		if (inviterRefCode && !user.isFounded) {
 			const inviter = await this.userService.getUserByRefCode(inviterRefCode)
 			if (inviter) {
 				await this.bot.telegram.sendMessage(
@@ -97,6 +74,49 @@ export class TelegramUpdate {
 				caption: `Files for project: ${projectTitle || ''}`,
 				parse_mode: 'HTML'
 			})
+		}
+	}
+
+	private async sendContent(
+		ctx: Context,
+		content: IContentSection,
+		webAppUrl: string
+	) {
+		const { caption, contentUrl, buttonText } = content
+
+		await ctx.replyWithPhoto(
+			{ url: contentUrl || '' },
+			{
+				caption,
+				reply_markup: {
+					inline_keyboard: [
+						[
+							{
+								text: buttonText || 'Далее',
+								web_app: buttonText
+									? { url: webAppUrl + '/projects' }
+									: undefined,
+								callback_data: 'next'
+							}
+						]
+					]
+				}
+			}
+		)
+	}
+
+	private async sendContentSequence(ctx: Context, webAppUrl: string) {
+		const contentSequence = [
+			contentData.first,
+			contentData.memeFactory,
+			contentData.airdrop,
+			contentData.sky,
+			contentData.firstAdvertiser
+		]
+
+		for (const content of contentSequence) {
+			await this.sendContent(ctx, content, webAppUrl)
+			await new Promise(resolve => setTimeout(resolve, 20000))
 		}
 	}
 }
