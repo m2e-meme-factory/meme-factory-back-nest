@@ -44,6 +44,13 @@ export class CreateAutoTaskDto {
   @IsNotEmpty()
   @IsInt()
   userId: number;
+  @ApiProperty({
+    description: 'ID of the task associated with the apply',
+    example: 1,
+  })
+  @IsNotEmpty()
+  @IsInt()
+  taskId: number;
 
   @ApiProperty({
     description: 'Creation date of the task',

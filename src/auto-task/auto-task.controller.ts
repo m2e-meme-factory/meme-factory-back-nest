@@ -7,7 +7,8 @@ import {
 	NotFoundException,
 	ParseIntPipe,
 	HttpCode,
-	HttpStatus
+	HttpStatus,
+  Req
 } from '@nestjs/common'
 import {
 	ApiTags,
@@ -67,9 +68,11 @@ export class AutoTaskController {
 	})
 	@HttpCode(HttpStatus.CREATED)
 	async applyForTask(
-		@Body() createAutoTaskDto: CreateAutoTaskDto
+		@Body() createAutoTaskDto: CreateAutoTaskDto,
+    @Req() req: Request
 	): Promise<AutoTask> {
-		return this.autoTaskService.applyForTask(createAutoTaskDto)
+    const user = req["user"]
+		return this.autoTaskService.applyForTask(createAutoTaskDto, user)
 	}
 
 	@Post(':id/claim')

@@ -3,11 +3,12 @@ import {
 	NotFoundException,
 	ForbiddenException
 } from '@nestjs/common'
-import { AutoTask, TransactionType } from '@prisma/client'
+import { AutoTask, TransactionType, User, UserRole } from '@prisma/client'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { CreateAutoTaskDto } from './dto/create-auto-task.dto'
 import { TransactionService } from 'src/transaction/transaction.service'
 import { CreateTransactionDto } from 'src/transaction/dto/transaction.dto'
+import { checkUserRole } from 'src/project/project.utils'
 
 @Injectable()
 export class AutoTaskService {
@@ -27,8 +28,10 @@ export class AutoTaskService {
 		})
 	}
 
-	async applyForTask(dto: CreateAutoTaskDto): Promise<AutoTask> {
-		const { title, description, reward, url, userId } = dto
+	async applyForTask(dto: CreateAutoTaskDto, user: User): Promise<AutoTask> {
+		checkUserRole(user, UserRole.creator)
+
+		const { title, description, reward, url, userId, taskId} = dto
 
 		const task = await this.prisma.autoTask.create({
 			data: {
@@ -36,6 +39,7 @@ export class AutoTaskService {
 				description,
 				reward,
 				url,
+				taskId,
 				userId
 			}
 		})

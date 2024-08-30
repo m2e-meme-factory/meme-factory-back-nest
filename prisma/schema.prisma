@@ -91,13 +91,14 @@ model Task {
 
 model AutoTask {
   id          Int      @id @default(autoincrement())
-  title       String
-  description String
+  title       String?
+  description String?
   reward      Decimal
   url         String?
   userId      Int
+  taskId      Int
   user        User     @relation(fields: [userId], references: [id])
-  isConfirmed Boolean @default(false)
+  isConfirmed Boolean  @default(false)
   createdAt   DateTime @default(now())
 }
 
