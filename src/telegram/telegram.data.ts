@@ -11,4 +11,4 @@ export const caption = `
 Нажми "Начинаем" и я передам тебя твоему первому заказчику!
 `
 
-export const skyImageUrl = './images/sky.jpg'
+export const skyImageUrl = `${process.env.APP_URL}/uploads/default/3e15e586-3b00-4bfe-bac1-3f80fdd51786_sky.jpg`
