@@ -93,10 +93,12 @@ export class TelegramUpdate {
 						[
 							{
 								text: buttonText || 'Далее',
-								web_app: buttonText
-									? { url: webAppUrl + '/projects' }
-									: undefined,
+								// web_app:  { url: webAppUrl + '/projects' },
 								callback_data: 'next'
+							},
+							{
+								text: 'Открыть приложение',
+								web_app: { url: webAppUrl + '/projects' }
 							}
 						]
 					]
