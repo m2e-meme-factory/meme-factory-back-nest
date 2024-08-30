@@ -1,12 +1,13 @@
 // telegram.update.ts
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client'
 import { Update, Ctx, Start, InjectBot } from 'nestjs-telegraf'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { UserService } from 'src/user/user.service'
 import { Context, Telegraf } from 'telegraf'
-import { InputFile } from 'telegraf/typings/core/types/typegram';
+import { InputFile } from 'telegraf/typings/core/types/typegram'
+import { caption, skyImageUrl } from './telegram.data'
 
-const ORIGIN_URL = process.env.HOST_URL;
+const ORIGIN_URL = process.env.HOST_URL
 
 @Update()
 export class TelegramUpdate {
@@ -31,18 +32,37 @@ export class TelegramUpdate {
 		)
 		const webAppUrl = process.env.APP_URL
 
-		await ctx.reply(`Приветствуем, ${ctx.from.first_name}!`, {
-			reply_markup: {
-				inline_keyboard: [
-					[
-						{
-							text: 'Открыть приложение',
-							web_app: { url: webAppUrl + '/projects' }
-						}
+
+		await ctx.replyWithPhoto(
+			{ url: skyImageUrl },
+			{
+				caption,
+				reply_markup: {
+					inline_keyboard: [
+						[
+							{
+								text: 'Начинаем!',
+								web_app: { url: webAppUrl + '/projects' }
+							}
+						]
 					]
-				]
+				}
 			}
-		})
+		)
+
+		// await ctx.reply(`Приветствуем, ${ctx.from.first_name}!`, {
+		// 	reply_markup: {
+		// 		inline_keyboard: [
+		// 			[
+		// 				{
+		// 					text: 'Открыть приложение',
+		// 					web_app: { url: webAppUrl + '/projects' }
+		// 				}
+		// 			]
+		// 		]
+		// 	}
+		// })
+
 		if (inviterRefCode && user.isFounded === false) {
 			const inviter = await this.userService.getUserByRefCode(inviterRefCode)
 			if (inviter) {
@@ -58,25 +78,25 @@ export class TelegramUpdate {
 		files: string[],
 		projectTitle: string = undefined
 	): Promise<void> {
-		const message = `Download attachments for project <b>${projectTitle || ''}</b>:\n`;
-	
+		const message = `Download attachments for project <b>${projectTitle || ''}</b>:\n`
+
 		await this.bot.telegram.sendMessage(telegramId, message, {
 			parse_mode: 'HTML',
 			link_preview_options: {
 				is_disabled: true
 			}
-		});
-	
+		})
+
 		const documents: InputFile[] = files.map(fileName => ({
 			url: `${ORIGIN_URL}/files/download/${fileName}`,
 			filename: fileName.substring(37)
-		}));
-	
+		}))
+
 		for (const document of documents) {
 			await this.bot.telegram.sendDocument(telegramId, document, {
 				caption: `Files for project: ${projectTitle || ''}`,
 				parse_mode: 'HTML'
-			});
+			})
 		}
 	}
 }
