@@ -85,7 +85,7 @@ export class UserService {
 			const existingMetaTag = await this.prisma.metaTag.findFirst({
 				where: { tag: metaTag, userId: user.id }
 			})
-			if (!existingMetaTag) {
+			if (!existingMetaTag && metaTag) {
 				await this.prisma.metaTag.create({
 					data: {
 						tag: metaTag,
