@@ -14,7 +14,7 @@ import { AutoTaskService } from './auto-task.service';
 import { AutoTask } from '@prisma/client';
 import { CreateAutoTaskDto } from './dto/create-auto-task.dto';
 
-@ApiTags('AutoTask')
+@ApiTags('autotasks')
 @Controller('autotasks')
 export class AutoTaskController {
   constructor(private readonly autoTaskService: AutoTaskService) {}
