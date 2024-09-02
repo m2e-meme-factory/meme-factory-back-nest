@@ -25,7 +25,7 @@ import { session } from 'telegraf';
     {
       provide: 'TELEGRAM_SCENES',
       useFactory: (messageSequenceScene: MessageSequenceScene) => {
-        return [messageSequenceScene.scene];
+        return [messageSequenceScene];
       },
       inject: [MessageSequenceScene],
     },

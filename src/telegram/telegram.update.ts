@@ -4,8 +4,8 @@ import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { UserService } from 'src/user/user.service'
 import { Context, Telegraf } from 'telegraf'
 import { InputFile } from 'telegraf/typings/core/types/typegram'
-import { MyContext } from './telegram.context'
 import { SEQUENCE_SCENE_ID } from './message-sequence.scene'
+import { SceneContext, SceneSession } from 'telegraf/typings/scenes'
 
 const ORIGIN_URL = process.env.HOST_URL
 
@@ -18,7 +18,7 @@ export class TelegramUpdate {
 
 	@Start()
 	@PublicRoute()
-	async startCommand(@Ctx() ctx: MyContext) {
+	async startCommand(@Ctx() ctx: SceneContext & { session: SceneSession & {messageIndex: number}}) {
 		const messageText = ctx.text || ''
 		const params = messageText.split(' ')[1]?.split('_')
 		const inviterRefCode = params?.[0]
@@ -31,7 +31,12 @@ export class TelegramUpdate {
 			metaTag
 		)
 
-		await ctx.scene.enter(SEQUENCE_SCENE_ID)
+		try {
+            console.log(`Entering scene: ${SEQUENCE_SCENE_ID}`);
+            await ctx.scene.enter(SEQUENCE_SCENE_ID);
+        } catch (error) {
+            console.error(`Failed to enter scene: ${error.message}`);
+        }
 
 		if (inviterRefCode && !user.isFounded) {
 			const inviter = await this.userService.getUserByRefCode(inviterRefCode)
