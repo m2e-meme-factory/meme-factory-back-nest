@@ -55,6 +55,7 @@ export class TelegramUpdate {
   }
 
   @Action('next')
+  @PublicRoute()
   async onNext(ctx: Context) {
     if (this.isProcessing) return;
     this.isProcessing = true;
