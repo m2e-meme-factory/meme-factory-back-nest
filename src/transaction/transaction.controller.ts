@@ -11,10 +11,13 @@ import {
 	ApiResponse,
 	ApiTags,
 	ApiParam,
-	ApiBody
+	ApiBody,
+	ApiBearerAuth
 } from '@nestjs/swagger'
-import { Decimal } from '@prisma/client/runtime/library'
+// import { Decimal } from '@prisma/client/runtime/library'
+import { Transaction } from '@prisma/client'
 
+@ApiBearerAuth('access-token')
 @ApiTags('transactions')
 @Controller('transactions')
 export class TransactionController {
@@ -52,7 +55,7 @@ export class TransactionController {
 	})
 	async create(
 		@Body() createTransactionDto: CreateTransactionDto
-	): Promise<{ transaction: any; newBalance: Decimal }> {
+	): Promise<Transaction> {
 		return this.transactionService.createTransaction(createTransactionDto)
 	}
 

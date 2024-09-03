@@ -6,8 +6,8 @@ import { IsInt, IsNotEmpty, IsOptional, IsDecimal, IsEnum } from 'class-validato
 export class CreateTransactionDto {
 	@ApiProperty()
 	@IsInt()
-	@IsNotEmpty()
-	projectId: number
+	@IsOptional()
+	projectId?: number
 
 	@ApiProperty()
 	@IsInt()
@@ -15,9 +15,10 @@ export class CreateTransactionDto {
 	taskId: number
 
 	@ApiProperty()
-	@IsInt()
-	@IsNotEmpty()
-	fromUserId: number
+	// @IsInt()
+	// @IsString()
+	@IsOptional()
+	fromUserId?: number
 
 	@ApiProperty()
 	@IsInt()

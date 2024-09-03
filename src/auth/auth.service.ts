@@ -22,7 +22,7 @@ export class AuthService {
 			})
 
 			const parsedData = parse(initData)
-			const user = await this.userService.findOrCreateUser(
+			const { user } = await this.userService.findOrCreateUser(
 				parsedData.user.id,
 				parsedData.user.username
 			)

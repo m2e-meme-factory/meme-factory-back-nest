@@ -262,24 +262,24 @@ export class ProjectController {
 	@ApiResponse({ status: 404, description: 'Project or files not found.' })
 	@ApiResponse({ status: 500, description: 'Internal server error.' })
 	@PublicRoute()
-	async sendFilesToTelegram(
-		@Param('id') projectId: string,
-		@Param('tg_id') telegramId: string
-	) {
-		try {
-			const parsedProjectId = parseInt(projectId)
-			await this.projectService.sendProjectFilesToTelegram(
-				parsedProjectId,
-				telegramId
-			)
-			return { message: 'Файлы отправлены в Telegram' }
-		} catch (error) {
-			throw new InternalServerErrorException(
-				`Ошибка при отправке файлов в Telegram: ${error}`,
-				error.message
-			)
+		async sendFilesToTelegram(
+			@Param('id') projectId: string,
+			@Param('tg_id') telegramId: string
+		) {
+			try {
+				const parsedProjectId = parseInt(projectId)
+				await this.projectService.sendProjectFilesToTelegram(
+					parsedProjectId,
+					telegramId
+				)
+				return { message: 'Файлы отправлены в Telegram' }
+			} catch (error) {
+				throw new InternalServerErrorException(
+					`Ошибка при отправке файлов в Telegram: ${error}`,
+					error.message
+				)
+			}
 		}
-	}
 
 	@ApiOperation({ summary: 'Подать заявку на участие в проекте' })
 	@ApiParam({ name: 'id', type: 'string', description: 'ID проекта' })

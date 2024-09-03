@@ -3,6 +3,7 @@ import { FileResponse } from './file.interface'
 import { path } from 'app-root-path'
 import { ensureDir, writeFile } from 'fs-extra'
 import { v4 as uuidv4 } from 'uuid'
+import { russianToTranslit } from './file.helper'
 
 @Injectable()
 export class FileService {
@@ -13,12 +14,12 @@ export class FileService {
 		'image/gif',
 		'image/bmp',
 		'image/webp',
-        'application/pdf', // PDF
-        'application/msword', // DOC
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
-        'audio/mpeg', // MP3
-        'video/mp4', // MP4
-        'video/x-msvideo', // AVI
+		'application/pdf', // PDF
+		'application/msword', // DOC
+		'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
+		'audio/mpeg', // MP3
+		'video/mp4', // MP4
+		'video/x-msvideo' // AVI
 	]
 	private maxFileSize = 25 * 1024 * 1024 // 25 MB
 
@@ -31,10 +32,10 @@ export class FileService {
 
 		const res: FileResponse[] = await Promise.all(
 			files.map(async file => {
-
-				const uniqueName = `${uuidv4()}_` + Buffer.from(file.originalname, 'latin1').toString(
-      'utf8',
-    );
+				const uniqueName = 
+					`${uuidv4()}_` +
+						Buffer.from(file.originalname, 'latin1').toString('utf8')
+				
 
 				await writeFile(`${uploadFolder}/${uniqueName}`, file.buffer)
 

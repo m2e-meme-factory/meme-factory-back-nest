@@ -42,18 +42,20 @@ model User {
 
   ProgressProject ProgressProject[]
 
-  MetaTag MetaTag[]
+  MetaTag  MetaTag[]
+  AutoTask AutoTask[]
 
   @@map("users")
 }
 
 model UserInfo {
-  id          Int    @id @default(autoincrement())
-  userId      String @unique
-  name        String
-  phoneNumber String
-  email       String
-  user        User   @relation(fields: [userId], references: [telegramId])
+  id               Int     @id @default(autoincrement())
+  userId           Int     @unique
+  name             String?
+  phoneNumber      String?
+  email            String?
+  tonWalletAddress String?
+  user             User    @relation(fields: [userId], references: [id])
 }
 
 model Project {
@@ -87,6 +89,19 @@ model Task {
   Project Project[]
 }
 
+model AutoTask {
+  id          Int      @id @default(autoincrement())
+  title       String?
+  description String?
+  reward      Decimal
+  url         String?
+  userId      Int
+  taskId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  isConfirmed Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
 model ProjectTask {
   projectId Int
   taskId    Int
@@ -105,16 +120,16 @@ model UndelitableMessage {
 
 model Transaction {
   id         Int             @id @default(autoincrement())
-  projectId  Int
+  projectId  Int?
   taskId     Int
-  fromUserId Int
+  fromUserId Int?
   toUserId   Int
   amount     Decimal
   createdAt  DateTime        @default(now())
   type       TransactionType @default(PAYMENT)
 
-  fromUser User @relation("FromUser", fields: [fromUserId], references: [id])
-  toUser   User @relation("ToUser", fields: [toUserId], references: [id])
+  fromUser User? @relation("FromUser", fields: [fromUserId], references: [id])
+  toUser   User  @relation("ToUser", fields: [toUserId], references: [id])
 }
 
 enum TransactionType {
