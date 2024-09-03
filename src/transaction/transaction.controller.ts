@@ -11,11 +11,13 @@ import {
 	ApiResponse,
 	ApiTags,
 	ApiParam,
-	ApiBody
+	ApiBody,
+	ApiBearerAuth
 } from '@nestjs/swagger'
 // import { Decimal } from '@prisma/client/runtime/library'
 import { Transaction } from '@prisma/client'
 
+@ApiBearerAuth('access-token')
 @ApiTags('transactions')
 @Controller('transactions')
 export class TransactionController {

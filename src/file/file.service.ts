@@ -32,10 +32,10 @@ export class FileService {
 
 		const res: FileResponse[] = await Promise.all(
 			files.map(async file => {
-				const uniqueName = russianToTranslit(
+				const uniqueName = 
 					`${uuidv4()}_` +
 						Buffer.from(file.originalname, 'latin1').toString('utf8')
-				)
+				
 
 				await writeFile(`${uploadFolder}/${uniqueName}`, file.buffer)
 
