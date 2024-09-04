@@ -36,6 +36,7 @@ model User {
   role                UserRole             @default(creator)
   events              Event[]
   balance             Decimal              @default(0)
+  isSended            Boolean              @default(false)
 
   transactionsSent     Transaction[] @relation("FromUser")
   transactionsReceived Transaction[] @relation("ToUser")

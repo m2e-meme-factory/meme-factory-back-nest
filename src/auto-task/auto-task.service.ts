@@ -1,7 +1,8 @@
 import {
 	Injectable,
 	NotFoundException,
-	ForbiddenException
+	ForbiddenException,
+	InternalServerErrorException
 } from '@nestjs/common'
 import { AutoTask, TransactionType, User, UserRole } from '@prisma/client'
 import { PrismaService } from 'src/prisma/prisma.service'
@@ -31,21 +32,29 @@ export class AutoTaskService {
 	}
 
 	async applyForTask(dto: CreateAutoTaskDto, user: User): Promise<AutoTask> {
-		checkUserRole(user, UserRole.creator)
+		try {
+			await checkUserRole(user, UserRole.creator)
 
-		const { title, description, reward, url, userId, taskId } = dto
+			const { title, description, reward, url, userId, taskId } = dto
 
-		const task = await this.prisma.autoTask.create({
-			data: {
-				title,
-				description,
-				reward,
-				url,
-				taskId,
-				userId
+			const task = await this.prisma.autoTask.create({
+				data: {
+					title,
+					description,
+					reward,
+					url,
+					taskId,
+					userId
+				}
+			})
+			return task
+		} catch (error) {
+			if (error instanceof ForbiddenException) {
+				throw new ForbiddenException(error.message)
+			} else {
+				throw new InternalServerErrorException(`apply for task: ${error}`)
 			}
-		})
-		return task
+		}
 	}
 
 	async claimTask(taskId: number, userId: number): Promise<AutoTask> {

@@ -24,7 +24,7 @@ export class TaskProgressService {
 	) {}
 
 	async applyToCompleteTask(user: User, taskId: number, message?: string) {
-		checkUserRole(user, UserRole.creator)
+		await checkUserRole(user, UserRole.creator)
 
 		try {
 			const projectTask = await this.prisma.projectTask.findFirst({
@@ -101,7 +101,7 @@ export class TaskProgressService {
 		message?: string
 	) {
 		try {
-			checkUserRole(user, UserRole.advertiser)
+			await checkUserRole(user, UserRole.advertiser)
 
 			const task = await this.prisma.task.findFirst({ where: { id: taskId } })
 			if (!task) {
@@ -166,7 +166,7 @@ export class TaskProgressService {
 							eventId: eventId
 						}
 					})
-					
+
 					if (existingProgress.status === ProgressStatus.pending) {
 						await this.projectProgressService.updateProjectProgressStatus(
 							user,
@@ -204,7 +204,7 @@ export class TaskProgressService {
 		eventId: number,
 		message?: string
 	) {
-		checkUserRole(user, UserRole.advertiser)
+		await checkUserRole(user, UserRole.advertiser)
 		try {
 			return await this.prisma.$transaction(async prisma => {
 				const task = await prisma.task.findFirst({ where: { id: taskId } })
