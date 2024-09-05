@@ -65,10 +65,11 @@ export class AutoTaskService {
 		if (!task) {
 			throw new NotFoundException('Task not found')
 		}
-
-		const timeElapsed = new Date().getTime() - task.createdAt.getTime()
-		if (timeElapsed < 120 * 1000) {
-			throw new ForbiddenException('You cannot claim the reward yet.')
+		if (task.isIntegrated === false) {
+			const timeElapsed = new Date().getTime() - task.createdAt.getTime()
+			if (timeElapsed < 120 * 1000) {
+				throw new ForbiddenException('You cannot claim the reward yet.')
+			}
 		}
 
 		const updatedTask = await this.prisma.$transaction(async prisma => {
