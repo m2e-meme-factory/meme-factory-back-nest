@@ -35,7 +35,7 @@ export class AutoTaskService {
 		try {
 			await checkUserRole(user, UserRole.creator)
 
-			const { title, description, reward, url, userId, taskId } = dto
+			const { title, description, reward, url, userId, taskId, isIntegrated } = dto
 
 			const task = await this.prisma.autoTask.create({
 				data: {
@@ -44,7 +44,8 @@ export class AutoTaskService {
 					reward,
 					url,
 					taskId,
-					userId
+					userId,
+					isIntegrated
 				}
 			})
 			return task
