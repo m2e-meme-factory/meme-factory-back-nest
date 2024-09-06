@@ -23,7 +23,7 @@ enum ProjectStatus {
 model User {
   id                  Int                  @id @default(autoincrement())
   telegramId          String               @unique
-  username            String
+  username            String?
   isBaned             Boolean              @default(false)
   isVerified          Boolean              @default(false)
   createdAt           DateTime             @default(now())
@@ -34,15 +34,29 @@ model User {
   userInfo            UserInfo?
   projects            Project[]
   role                UserRole             @default(creator)
+  events              Event[]
+  balance             Decimal              @default(0)
+  isSended            Boolean              @default(false)
+
+  transactionsSent     Transaction[] @relation("FromUser")
+  transactionsReceived Transaction[] @relation("ToUser")
+
+  ProgressProject ProgressProject[]
+
+  MetaTag  MetaTag[]
+  AutoTask AutoTask[]
+
+  @@map("users")
 }
 
 model UserInfo {
-  id          Int    @id @default(autoincrement())
-  userId      String @unique
-  name        String
-  phoneNumber String
-  email       String
-  user        User   @relation(fields: [userId], references: [telegramId])
+  id               Int     @id @default(autoincrement())
+  userId           Int     @unique
+  name             String?
+  phoneNumber      String?
+  email            String?
+  tonWalletAddress String?
+  user             User    @relation(fields: [userId], references: [id])
 }
 
 model Project {
@@ -55,22 +69,39 @@ model Project {
   tags        String[]
   category    String
   subtasks    Task[]
-  price       Float
   author      User          @relation(fields: [authorId], references: [id])
   tasks       ProjectTask[]
-  status ProjectStatus @default(draft)
+  status      ProjectStatus @default(draft)
+
+  events Event[]
+
+  ProgressProject ProgressProject[]
 }
 
 model Task {
   id          Int           @id @default(autoincrement())
   title       String
   description String
-  price       Float
+  price       Decimal
   projects    ProjectTask[]
 
   User User[]
 
   Project Project[]
+}
+
+model AutoTask {
+  id          Int      @id @default(autoincrement())
+  title       String?
+  description String?
+  reward      Decimal
+  url         String?
+  userId      Int
+  taskId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  isConfirmed Boolean  @default(false)
+  isIntegrated Boolean @default(false)
+  createdAt   DateTime @default(now())
 }
 
 model ProjectTask {
@@ -87,4 +118,97 @@ model UndelitableMessage {
   message_id String @id
   userId     String
   user       User   @relation(fields: [userId], references: [telegramId])
+}
+
+model Transaction {
+  id         Int             @id @default(autoincrement())
+  projectId  Int?
+  taskId     Int
+  fromUserId Int?
+  toUserId   Int
+  amount     Decimal
+  createdAt  DateTime        @default(now())
+  type       TransactionType @default(PAYMENT)
+
+  fromUser User? @relation("FromUser", fields: [fromUserId], references: [id])
+  toUser   User  @relation("ToUser", fields: [toUserId], references: [id])
+}
+
+enum TransactionType {
+  PAYMENT // Оплата за проект
+  DEPOSIT // Пополнение баланса
+  WITHDRAWAL // Вывод средств
+  SYSTEM // Системные транзакции за ивенты
+}
+
+model ProgressProject {
+  id        Int            @id @default(autoincrement())
+  userId    Int
+  projectId Int
+  status    ProgressStatus @default(pending)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+
+  events Event[]
+
+  @@unique([userId, projectId])
+}
+
+enum ProgressStatus {
+  pending
+  accepted
+  rejected
+}
+
+model Event {
+  id                Int  @id @default(autoincrement())
+  projectId         Int
+  progressProjectId Int?
+
+  userId    Int
+  role      UserRole
+  eventType EventType
+
+  description     String?
+  createdAt       DateTime         @default(now())
+  details         Json? // Stores transactionId, message, amount, subtaskId
+  Project         Project          @relation(fields: [projectId], references: [id])
+  User            User             @relation(fields: [userId], references: [id])
+  progressProject ProgressProject? @relation(fields: [progressProjectId], references: [id])
+  message         String?
+
+  @@index([projectId])
+  @@index([userId])
+}
+
+enum EventType {
+  PROJECT_CREATED
+  PROJECT_UPDATED
+  PROJECT_DELETED
+  APPLICATION_SUBMITTED
+  APPLICATION_APPROVED
+  APPLICATION_REJECTED
+  TASK_SUBMIT
+  TASK_REJECTED
+  TASK_COMPLETED
+  TASK_UPDATED
+  TRANSACTION_COMPLETED
+  DISPUTE_OPENED
+  DISPUTE_RESOLVED
+  USER_MESSAGE
+  RATING_GIVEN
+}
+
+model MetaTag {
+  id        Int      @id @default(autoincrement())
+  tag       String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId], name: "userId_idx")
+  @@map("meta_tags")
 }

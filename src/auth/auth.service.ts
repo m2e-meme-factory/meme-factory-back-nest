@@ -18,11 +18,11 @@ export class AuthService {
 
 		try {
 			validate(initData, botToken, {
-				expiresIn: 300
+				expiresIn: 60 * 60 * 24
 			})
 
 			const parsedData = parse(initData)
-			const user = await this.userService.findOrCreateUser(
+			const { user } = await this.userService.findOrCreateUser(
 				parsedData.user.id,
 				parsedData.user.username
 			)

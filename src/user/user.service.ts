@@ -1,72 +1,100 @@
 import {
 	BadRequestException,
 	Injectable,
+	InternalServerErrorException,
 	NotFoundException
 } from '@nestjs/common'
 import { PrismaService } from 'src/prisma/prisma.service'
-import { CreateUserDto } from './dto/user.dto'
 import { v4 as uuidv4 } from 'uuid'
 import { IUser } from './types/user.types'
+import { User, UserRole } from '@prisma/client'
+import { Decimal } from '@prisma/client/runtime/library'
 
 @Injectable()
 export class UserService {
 	constructor(private readonly prisma: PrismaService) { }
 
 	// func for test
-	async createUser(createUserDto: CreateUserDto): Promise<IUser> {
-		const { telegramId, username, isBaned, isVerified, inviterRefCode } =
-			createUserDto
+	// async createUser(createUserDto: CreateUserDto): Promise<IUser> {
+	// 	const { telegramId, username, isBaned, isVerified, inviterRefCode } =
+	// 		createUserDto
 
-		const existingUser = await this.prisma.user.findUnique({
-			where: { telegramId }
-		})
+	// 	const existingUser = await this.prisma.user.findUnique({
+	// 		where: { telegramId }
+	// 	})
 
-		if (existingUser) {
-			throw new BadRequestException('User with this telegramId already exists')
-		}
+	// 	if (existingUser) {
+	// 		throw new BadRequestException('User with this telegramId already exists')
+	// 	}
 
-		const refCode = uuidv4()
+	// 	const refCode = uuidv4()
 
-		const user = await this.prisma.user.create({
-			data: {
-				telegramId,
-				username,
-				isBaned: isBaned ?? false,
-				isVerified: isVerified ?? false,
-				inviterRefCode: inviterRefCode || null,
-				refCode
-			}
-		})
+	// 	const user = await this.prisma.user.create({
+	// 		data: {
+	// 			telegramId,
+	// 			username,
+	// 			isBaned: isBaned ?? false,
+	// 			isVerified: isVerified ?? false,
+	// 			inviterRefCode: inviterRefCode || null,
+	// 			refCode
+	// 		}
+	// 	})
 
-		return user
-	}
+	// 	return user
+	// }
 
 	// real func
-	async findOrCreateUser(telegramId: number, username: string, inviterRefCode?: string, role: 'creator' | 'advertiser' = 'creator') {
-		const user = await this.prisma.user.findUnique({
+	async findOrCreateUser(
+		telegramId: number,
+		username?: string,
+		inviterRefCode?: string,
+		role: 'creator' | 'advertiser' = 'creator',
+		metaTag?: string
+	) {
+		let isFounded = false
+		let user = await this.prisma.user.findUnique({
 			where: {
 				telegramId: telegramId.toString()
 			}
 		})
+		if(user) {
+			isFounded = true
+		}
 
 		if (!user) {
 			const refCode = uuidv4()
 
-			const user = await this.prisma.user.create({
+			user = await this.prisma.user.create({
 				data: {
 					telegramId: telegramId.toString(),
-					username,
+					username: username || undefined,
 					isBaned: false,
 					isVerified: false,
 					inviterRefCode: inviterRefCode || null,
 					refCode,
-					role: role
+					role: role,
+					MetaTag: metaTag ? { create: { tag: metaTag } } : undefined
 				}
 			})
-
-			return user
+			// const userInfo =
+			await this.prisma.userInfo.create({
+				data: {
+					userId: user.id
+				}
+			})
+			const existingMetaTag = await this.prisma.metaTag.findFirst({
+				where: { tag: metaTag, userId: user.id }
+			})
+			if (!existingMetaTag && metaTag) {
+				await this.prisma.metaTag.create({
+					data: {
+						tag: metaTag,
+						userId: user.id
+					}
+				})
+			}
 		}
-		return user
+		return {user,isFounded}
 	}
 
 	async isUserVerified(userId: string): Promise<{ isUser: boolean }> {
@@ -106,7 +134,9 @@ export class UserService {
 		return updatedUser
 	}
 
-	async getReferalsCount(telegramId: string): Promise<{ count: number, refLink: string }> {
+	async getReferalsCount(
+		telegramId: string
+	): Promise<{ count: number; refLink: string }> {
 		if (!telegramId) {
 			throw new BadRequestException('telegramId is required')
 		}
@@ -125,8 +155,8 @@ export class UserService {
 		const count = await this.prisma.user.count({
 			where: { inviterRefCode: user.refCode }
 		})
-
-		const refLink = `t.me/bot_name/?start=${user.refCode}`
+		// TODO: get bot name from bot.telegram.me
+		const refLink = `https://t.me/miniapped_bot?start=${user.refCode}`
 
 		return { count, refLink }
 	}
@@ -182,12 +212,78 @@ export class UserService {
 		return user
 	}
 
-	// Дополнительные методы для задачи и веб-запроса
-	// private async createTaskForUser(userId: string) {
-	//   // Логика по созданию задачи для пользователя
-	// }
+	async updateUserRole(id: number, role: UserRole): Promise<User> {
+		try {
+			const user = await this.prisma.user.update({
+				where: { id },
+				data: { role }
+			})
 
-	// private async processWebQuery(queryId: string) {
-	//   // Логика по обработке веб-запроса
+			return user
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при обновлении роли пользователя: ${error}`
+			)
+		}
+	}
+	async updateUserBalance(id: number, balance: Decimal): Promise<User> {
+		try {
+			const user = await this.prisma.user.update({
+				where: { id },
+				data: { balance }
+			})
+
+			return user
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при обновлении баланса пользователя: ${error}`
+			)
+		}
+	}
+
+	async updateUserBalanceByUserId(
+		userId: number,
+		amount: Decimal,
+		isAdd: boolean = true
+	) {
+		try {
+			const user = await this.prisma.user.findUnique({
+				where: { id: userId },
+				select: { balance: true }
+			})
+
+			if (!user) {
+				throw new NotFoundException(`User с ID ${userId} не найден`)
+			}
+
+			if (!isAdd && user.balance.lessThan(amount)) {
+				throw new Error('Недостаточно средств')
+			}
+
+			const updatedUser = await this.prisma.user.update({
+				where: { id: userId },
+				data: {
+					balance: isAdd ? { increment: amount } : { decrement: amount }
+				},
+				select: { balance: true }
+			})
+
+			return updatedUser.balance
+		} catch (error) {
+			if (error.message === 'Недостаточно средств') {
+				throw new Error(error.message)
+			}
+			throw new NotFoundException(`User с ID ${userId} не найден`)
+		}
+	}
+
+	// async getUserBalanceByUserId(userId: number) {
+	// 	try {
+	// 		const user = await this.prisma.user.findUnique({ where: { id: userId } })
+
+	// 		return user.balance
+	// 	} catch (error) {
+	// 		throw new NotFoundException(`User с ID ${userId} не найден`)
+	// 	}
 	// }
 }

@@ -7,18 +7,25 @@ import {
 	Param,
 	HttpCode,
 	HttpStatus,
-	BadRequestException
+	BadRequestException,
+	Put
 } from '@nestjs/common'
 import { UserService } from './user.service'
 import {
 	ApiOkResponse,
-	ApiCreatedResponse,
 	ApiBadRequestResponse,
 	ApiTags,
 	ApiQuery,
-	ApiBearerAuth
+	ApiBearerAuth,
+	ApiResponse,
+	ApiOperation,
+	ApiParam,
+	ApiBody
 } from '@nestjs/swagger'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
+import { User, UserRole } from '@prisma/client'
+import { UpdateUserBalanceDto, UpdateUserRoleDto } from './dto/user.dto'
+import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
 
 @ApiTags('users')
 @Controller('users')
@@ -26,36 +33,36 @@ import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
-	@Post('create')
-	@ApiCreatedResponse({
-		description: 'The user has been successfully created.',
-		schema: {
-			example: {
-				id: 3,
-				telegramId: '123456789',
-				username: '123456789',
-				isBaned: false,
-				isVerified: false,
-				createdAt: '2024-07-31T15:32:51.022Z',
-				inviterRefCode: '5678',
-				refCode: '123456789'
-			},
-			properties: {
-				id: { type: 'number' },
-				telegramId: { type: 'string' },
-				username: { type: 'string' },
-				isBaned: { type: 'boolean' },
-				isVerified: { type: 'boolean' },
-				createdAt: { type: 'string', format: 'date-time' },
-				inviterRefCode: { type: 'string', nullable: true },
-				refCode: { type: 'string' }
-			}
-		}
-	})
-	@ApiBadRequestResponse({ description: 'Bad Request.' })
-	async createUser(@Body() createUserDto) {
-		return await this.userService.createUser(createUserDto)
-	}
+	// @Post('create')
+	// @ApiCreatedResponse({
+	// 	description: 'The user has been successfully created.',
+	// 	schema: {
+	// 		example: {
+	// 			id: 3,
+	// 			telegramId: '123456789',
+	// 			username: '123456789',
+	// 			isBaned: false,
+	// 			isVerified: false,
+	// 			createdAt: '2024-07-31T15:32:51.022Z',
+	// 			inviterRefCode: '5678',
+	// 			refCode: '123456789'
+	// 		},
+	// 		properties: {
+	// 			id: { type: 'number' },
+	// 			telegramId: { type: 'string' },
+	// 			username: { type: 'string' },
+	// 			isBaned: { type: 'boolean' },
+	// 			isVerified: { type: 'boolean' },
+	// 			createdAt: { type: 'string', format: 'date-time' },
+	// 			inviterRefCode: { type: 'string', nullable: true },
+	// 			refCode: { type: 'string' }
+	// 		}
+	// 	}
+	// })
+	// @ApiBadRequestResponse({ description: 'Bad Request.' })
+	// async createUser(@Body() createUserDto) {
+	// 	return await this.userService.createUser(createUserDto)
+	// }
 
 	@Post('is_user_verified')
 	@HttpCode(HttpStatus.OK)
@@ -151,6 +158,8 @@ export class UserController {
 				id: 1,
 				telegramId: '1234567',
 				username: '1234567',
+				role: UserRole.creator,
+				balance: 0,
 				isBaned: false,
 				isVerified: true,
 				createdAt: '2024-07-31T15:19:16.000Z',
@@ -161,6 +170,8 @@ export class UserController {
 				id: { type: 'number' },
 				telegramId: { type: 'string' },
 				username: { type: 'string' },
+				role: {type: UserRole.creator},
+				balance: { type: 'number' },
 				isBaned: { type: 'boolean' },
 				isVerified: { type: 'boolean' },
 				createdAt: { type: 'string', format: 'date-time' },
@@ -194,6 +205,8 @@ export class UserController {
 					id: 1,
 					telegramId: '1234567',
 					username: '1234567',
+					role: UserRole.creator,
+					balance: 0,
 					isBaned: false,
 					isVerified: true,
 					createdAt: '2024-07-31T15:19:16.000Z',
@@ -204,6 +217,8 @@ export class UserController {
 					id: 2,
 					telegramId: '12345678',
 					username: '12345678',
+					role: UserRole.creator,
+					balance: 0,
 					isBaned: false,
 					isVerified: true,
 					createdAt: '2024-07-31T15:32:24.768Z',
@@ -214,6 +229,8 @@ export class UserController {
 					id: 3,
 					telegramId: '123456789',
 					username: '123456789',
+					role: UserRole.creator,
+					balance: 0,
 					isBaned: false,
 					isVerified: false,
 					createdAt: '2024-07-31T15:32:51.022Z',
@@ -228,6 +245,8 @@ export class UserController {
 					id: { type: 'number' },
 					telegramId: { type: 'string' },
 					username: { type: 'string' },
+					role: {type: UserRole.creator},
+					balance: { type: 'number' },
 					isBaned: { type: 'boolean' },
 					isVerified: { type: 'boolean' },
 					createdAt: { type: 'string', format: 'date-time' },
@@ -256,6 +275,8 @@ export class UserController {
 				id: 1,
 				telegramId: '1234567',
 				username: '1234567',
+				role: UserRole.creator,
+				balance: 0,
 				isBaned: false,
 				isVerified: true,
 				createdAt: '2024-07-31T15:19:16.000Z',
@@ -266,6 +287,8 @@ export class UserController {
 				id: { type: 'number' },
 				telegramId: { type: 'string' },
 				username: { type: 'string' },
+				role: {type: UserRole.creator},
+				balance: { type: 'number' },
 				isBaned: { type: 'boolean' },
 				isVerified: { type: 'boolean' },
 				createdAt: { type: 'string', format: 'date-time' },
@@ -292,6 +315,8 @@ export class UserController {
 				id: 1,
 				telegramId: '1234567',
 				username: '1234567',
+				role: UserRole.creator,
+				balance: 0,
 				isBaned: false,
 				isVerified: true,
 				createdAt: '2024-07-31T15:19:16.000Z',
@@ -302,12 +327,14 @@ export class UserController {
 				id: { type: 'number' },
 				telegramId: { type: 'string' },
 				username: { type: 'string' },
+				role: {type: UserRole.creator},
+				balance: { type: 'number' },
 				isBaned: { type: 'boolean' },
 				isVerified: { type: 'boolean' },
 				createdAt: { type: 'string', format: 'date-time' },
 				inviterRefCode: { type: 'string', nullable: true },
 				refCode: { type: 'string' }
-			}
+			},
 		}
 	})
 	@ApiBadRequestResponse({ description: 'Bad Request.' })
@@ -318,5 +345,68 @@ export class UserController {
 		} catch (error) {
 			throw new BadRequestException(error.message)
 		}
+	}
+
+	@Put(':id/role')
+	@ApiOperation({ summary: 'Изменить роль пользователя' })
+	@ApiParam({ name: 'id', description: 'ID пользователя' })
+	@ApiBody({ type: UpdateUserRoleDto })
+	@ApiResponse({
+		status: 200,
+		description: 'Роль пользователя успешно обновлена.',
+		schema: {
+			example: {
+				id: 1,
+				telegramId: '1234567',
+				username: '1234567',
+				role: UserRole.creator,
+				balance: 0,
+				isBaned: false,
+				isVerified: true,
+				createdAt: '2024-07-31T15:19:16.000Z',
+				inviterRefCode: null,
+				refCode: '1234567'
+			}
+		}
+	})
+	@ApiResponse({ status: 400, description: 'Неверные данные запроса.' })
+	@ApiResponse({ status: 404, description: 'Пользователь не найден.' })
+	@ApiResponse({ status: 403, description: 'Доступ запрещен.' })
+	async updateUserRole(
+		@Param('id', IdValidationPipe) id: number,
+		@Body() updateUserRoleDto: UpdateUserRoleDto
+	): Promise<User> {
+		return this.userService.updateUserRole(id, updateUserRoleDto.role)
+	}
+	@Put(':id/balance')
+	@ApiOperation({ summary: 'Изменить баланс пользователя' })
+	@ApiParam({ name: 'id', description: 'ID пользователя' })
+	@ApiBody({ type: UpdateUserBalanceDto })
+	@ApiResponse({
+		status: 200,
+		description: 'Баланс пользователя успешно обновлен.',
+		schema: {
+			example: {
+				id: 1,
+				telegramId: '1234567',
+				username: '1234567',
+				role: UserRole.creator,
+				balance: 1000,
+				isBaned: false,
+				isVerified: true,
+				createdAt: '2024-07-31T15:19:16.000Z',
+				inviterRefCode: null,
+				refCode: '1234567'
+			}
+		}
+	})
+	@ApiResponse({ status: 400, description: 'Неверные данные запроса.' })
+	@ApiResponse({ status: 404, description: 'Пользователь не найден.' })
+	@ApiResponse({ status: 403, description: 'Доступ запрещен.' })
+	async updateUserBalance(
+		@Param('id', IdValidationPipe) id: number,
+		@Body() updateUserBalanceDto: UpdateUserBalanceDto
+	): Promise<User> {
+		return this.userService.updateUserBalance(id, updateUserBalanceDto.balance)
 	}
 }

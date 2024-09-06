@@ -1,6 +1,15 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger'
 import { ProjectStatus } from '@prisma/client'
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator'
+import { Decimal } from '@prisma/client/runtime/library'
+import {
+	IsArray,
+	IsDecimal,
+	IsInt,
+	IsNotEmpty,
+	IsNumber,
+	IsOptional,
+	IsString
+} from 'class-validator'
 
 export class CreateTaskDto {
 	@IsOptional()
@@ -16,8 +25,8 @@ export class CreateTaskDto {
 	description: string
 
 	@ApiProperty({ example: 1000 })
-	@IsNumber()
-	price: number
+	@IsDecimal()
+	price: Decimal
 }
 
 export class CreateProjectDto {
@@ -58,15 +67,64 @@ export class CreateProjectDto {
 	})
 	@IsArray()
 	subtasks: CreateTaskDto[]
-
-	@ApiProperty({ example: 1000 })
-	@IsNumber()
-	price: number
 }
 
-export class UpdateProjectDto extends PartialType(CreateProjectDto) {}
+export class UpdateProjectDto extends PartialType(CreateProjectDto) {
+	@IsArray()
+	@ApiProperty({ example: [1, 2, 3, 4, 5] })
+	@IsOptional()
+	deletedTasks?: number[]
+}
 
 export class UpdateProjectStatusDto {
 	@ApiProperty({ enum: ProjectStatus })
-	status: ProjectStatus;
-  }
+	status: ProjectStatus
+
+
+}
+// export class UpdateProjectApplicationStatusDto {
+// 	@ApiProperty({ enum: ApplicationStatus })
+// 	status: ApplicationStatus
+// }
+
+// export class UpdateTaskResponseStatusDto {
+// 	@ApiProperty({ enum: ResponseStatus })
+// 	status: ResponseStatus
+// }
+
+export class ApplyProjectDto {
+	@IsInt()
+	@IsNotEmpty()
+	@ApiProperty({ example: 1 })
+	projectId: number
+}
+
+export class RespondTaskDto {
+	@IsInt()
+	@IsNotEmpty()
+	@ApiProperty({ example: 1 })
+	taskId: number
+}
+
+export class RejectTaskCompletionDto {
+	@ApiProperty({
+		description: 'ID пользователя, создавшего задачу',
+		example: 1
+	})
+	@IsNumber()
+	creatorId: number
+	@ApiProperty({
+		description: 'ID события, которое принимаем',
+		example: 1
+	})
+	@IsNumber()
+	eventId: number
+
+	@ApiProperty({
+		description: 'Сообщение с причиной отклонения',
+		example: 'Задача выполнена неверно.',
+		required: false
+	})
+	@IsString()
+	message?: string
+}

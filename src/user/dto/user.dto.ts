@@ -1,5 +1,7 @@
 import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator'
 import { ApiProperty } from '@nestjs/swagger'
+import { UserRole } from '@prisma/client'
+import { Decimal } from '@prisma/client/runtime/library'
 
 export class CreateUserDto {
 	@ApiProperty()
@@ -58,3 +60,12 @@ export class GetUserDataDto {
 	@IsNotEmpty()
 	userId: string
 }
+
+export class UpdateUserRoleDto {
+	@ApiProperty({ enum: UserRole })
+	role: UserRole;
+  }
+export class UpdateUserBalanceDto {
+	@ApiProperty()
+	balance: Decimal;
+  }

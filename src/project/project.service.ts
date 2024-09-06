@@ -40,7 +40,7 @@ export class ProjectService {
 			tags,
 			category,
 			subtasks,
-			price
+
 		} = createProjectDto
 
 		try {
@@ -53,7 +53,7 @@ export class ProjectService {
 					files,
 					tags,
 					category,
-					price
+
 				}
 			})
 
@@ -154,7 +154,6 @@ export class ProjectService {
 			tags,
 			category,
 			subtasks,
-			price
 		} = updateProjectDto
 
 		try {
@@ -174,7 +173,7 @@ export class ProjectService {
 					files,
 					tags,
 					category,
-					price
+
 				}
 			})
 
@@ -286,16 +285,17 @@ export class ProjectService {
 	async updateProjectStatus(id: number, status: ProjectStatus, user: User): Promise<Project> {
 		this.checkUserRole(user);
 		await this.checkProjectOwnership(id, user.id);
-	
+
 		try {
-		  const project = await this.prisma.project.update({
-			where: { id },
-			data: { status },
-		  });
-	
-		  return project;
+			const project = await this.prisma.project.update({
+				where: { id },
+				data: { status },
+			});
+
+			return project;
 		} catch (error) {
-		  throw new InternalServerErrorException('Ошибка при обновлении статуса проекта:', error);
+			throw new InternalServerErrorException('Ошибка при обновлении статуса проекта:', error);
 		}
-	  }
+	}
 }
+
