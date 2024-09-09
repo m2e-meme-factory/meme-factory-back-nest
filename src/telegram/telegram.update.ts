@@ -1,4 +1,4 @@
-import { UserRole } from '@prisma/client'
+import { TransactionType, UserRole } from '@prisma/client'
 import { Update, Ctx, Start, InjectBot, Hears } from 'nestjs-telegraf'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { UserService } from 'src/user/user.service'
@@ -7,6 +7,8 @@ import { InputFile } from 'telegraf/typings/core/types/typegram'
 import { SEQUENCE_SCENE_ID } from './message-sequence.scene'
 import { SceneContext, SceneSession } from 'telegraf/typings/scenes'
 import { PrismaService } from 'src/prisma/prisma.service'
+import { TransactionService } from 'src/transaction/transaction.service'
+import { Decimal } from '@prisma/client/runtime/library'
 
 const ORIGIN_URL = process.env.HOST_URL
 
@@ -15,7 +17,8 @@ export class TelegramUpdate {
 	constructor(
 		@InjectBot() private readonly bot: Telegraf<Context>,
 		private readonly userService: UserService,
-		private readonly prisma: PrismaService
+		private readonly prisma: PrismaService,
+		private readonly transactionService: TransactionService
 	) {}
 
 	@Start()
@@ -42,6 +45,12 @@ export class TelegramUpdate {
 					inviter.telegramId,
 					`Ваш реферальный код был использован!`
 				)
+
+				await this.transactionService.createTransaction({
+					toUserId: user.user.id,
+					amount: new Decimal(100),
+					type: TransactionType.SYSTEM
+				})
 			}
 		}
 
