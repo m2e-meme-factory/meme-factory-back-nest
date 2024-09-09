@@ -15,13 +15,13 @@ const SEQUENCE_STEP_DURATION = 20000
 @Injectable()
 @Scene(SEQUENCE_SCENE_ID)
 export class MessageSequenceScene {
-	constructor(private readonly prisma: PrismaService) { }
+	constructor(private readonly prisma: PrismaService) {}
 	private contentSequence: IContentSection[] = [
 		contentData.first,
 		contentData.memeFactory,
 		contentData.airdrop,
 		contentData.sky,
-		contentData.firstAdvertiser,
+		contentData.firstAdvertiser
 	]
 	private againMessage = contentData.againMessage
 
@@ -29,7 +29,9 @@ export class MessageSequenceScene {
 	@SceneEnter()
 	async enter(
 		@Ctx()
-		ctx: SceneContext & { session: SceneSession & { messageIndex: number, lastMessageId: number } }
+		ctx: SceneContext & {
+			session: SceneSession & { messageIndex: number; lastMessageId: number }
+		}
 	) {
 		const user = await this.prisma.user.findFirst({
 			where: { telegramId: String(ctx.from.id) }
@@ -52,7 +54,9 @@ export class MessageSequenceScene {
 	@Action('next')
 	async action(
 		@Ctx()
-		ctx: SceneContext & { session: SceneSession & { messageIndex: number, lastMessageId: number } }
+		ctx: SceneContext & {
+			session: SceneSession & { messageIndex: number; lastMessageId: number }
+		}
 	) {
 		ctx.session.messageIndex++
 		if (ctx.session.messageIndex < this.contentSequence.length) {
@@ -67,13 +71,14 @@ export class MessageSequenceScene {
 	}
 
 	private async startSequence(
-		ctx: SceneContext & { session: SceneSession & { messageIndex: number, lastMessageId: number } },
+		ctx: SceneContext & {
+			session: SceneSession & { messageIndex: number; lastMessageId: number }
+		},
 		user: User
 	) {
 		if (user.isSended) {
 			await this.sendContent(ctx, this.againMessage)
 		} else {
-			ctx.session.messageIndex++ // Увеличение индекса здесь предотвращает повторный вход в этот блок
 			interval(SEQUENCE_STEP_DURATION)
 				.pipe(
 					takeWhile(
@@ -102,8 +107,10 @@ export class MessageSequenceScene {
 		}
 	}
 
-
-	private async sendContent(ctx: SceneContext & { session: SceneSession & { lastMessageId: number } }, content: IContentSection) {
+	private async sendContent(
+		ctx: SceneContext & { session: SceneSession & { lastMessageId: number } },
+		content: IContentSection
+	) {
 		const webAppUrl = process.env.APP_URL
 		const { caption, contentUrl, buttonText } = content
 
@@ -141,7 +148,6 @@ export class MessageSequenceScene {
 			}
 
 			ctx.session.lastMessageId = message.message_id
-
 		} catch (error) {
 			console.error(`Failed to send content: ${error.message}`)
 		}
