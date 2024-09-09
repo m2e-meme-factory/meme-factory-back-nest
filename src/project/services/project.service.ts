@@ -278,7 +278,6 @@ export class ProjectService {
 
 			if (deletedTasks && deletedTasks.length > 0) {
 				for (const taskId of deletedTasks) {
-					// Проверяем, существует ли связь между проектом и задачей
 					const projectTask = await this.prisma.projectTask.findUnique({
 						where: {
 							projectId_taskId: {

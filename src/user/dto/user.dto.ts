@@ -37,7 +37,7 @@ export class VerifyUserDto {
 	@ApiProperty()
 	@IsString()
 	@IsNotEmpty()
-	userId: string
+	telegramId: string
 }
 
 export class IsUserVerifiedDto {

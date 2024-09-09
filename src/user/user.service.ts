@@ -109,13 +109,13 @@ export class UserService {
 		return { isUser: user ? user.isVerified : false }
 	}
 
-	async verifyUser(userId: string): Promise<IUser> {
-		if (!userId) {
+	async verifyUser(telegramId: string): Promise<IUser> {
+		if (!telegramId) {
 			throw new BadRequestException('user_id is required')
 		}
 
 		const user = await this.prisma.user.findUnique({
-			where: { telegramId: userId }
+			where: { telegramId: telegramId }
 		})
 
 		if (!user) {
@@ -127,7 +127,7 @@ export class UserService {
 		}
 
 		const updatedUser = await this.prisma.user.update({
-			where: { telegramId: userId },
+			where: { telegramId: telegramId },
 			data: { isVerified: true }
 		})
 
