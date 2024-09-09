@@ -87,8 +87,6 @@ export class MessageSequenceScene {
 							)
 							ctx.session.messageIndex++
 						} else {
-							await ctx.reply('Сообщения завершены.')
-							console.log('All messages sent. Sequence complete.')
 							await this.prisma.user.update({
 								where: {
 									id: user.id
@@ -116,18 +114,15 @@ export class MessageSequenceScene {
 		])
 
 		try {
-			// Удаляем кнопки с предыдущего сообщения
 			if (ctx.session.lastMessageId) {
 				await ctx.telegram.editMessageReplyMarkup(
 					ctx.chat.id,
 					ctx.session.lastMessageId,
 					null,
-					// Передаем пустую клавиатуру, чтобы убрать кнопки
 					{ inline_keyboard: [] }
 				)
 			}
 
-			// Отправляем новое сообщение и сохраняем его ID
 			let message
 			if (contentUrl) {
 				if (contentUrl.endsWith('.mp4')) {
@@ -145,7 +140,6 @@ export class MessageSequenceScene {
 				message = await ctx.reply(caption, replyMarkup)
 			}
 
-			// Сохраняем ID последнего сообщения
 			ctx.session.lastMessageId = message.message_id
 
 		} catch (error) {
