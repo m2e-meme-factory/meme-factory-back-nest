@@ -47,7 +47,7 @@ export class TelegramUpdate {
 				)
 
 				await this.transactionService.createTransaction({
-					toUserId: user.user.id,
+					toUserId: inviter.id,
 					amount: new Decimal(100),
 					type: TransactionType.SYSTEM
 				})
