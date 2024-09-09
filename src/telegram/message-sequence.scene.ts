@@ -30,7 +30,11 @@ export class MessageSequenceScene {
 	async enter(
 		@Ctx()
 		ctx: SceneContext & {
-			session: SceneSession & { messageIndex: number; lastMessageId: number }
+			session: SceneSession & {
+				messageIndex: number
+				lastMessageId: number
+				isUpdating: boolean
+			}
 		}
 	) {
 		const user = await this.prisma.user.findFirst({
@@ -38,6 +42,7 @@ export class MessageSequenceScene {
 		})
 		ctx.session.messageIndex = 0
 		ctx.session.lastMessageId = null
+		ctx.session.isUpdating = false
 
 		if (!user.isSended) {
 			console.log('Scene entered, starting sequence...')
@@ -45,9 +50,11 @@ export class MessageSequenceScene {
 				ctx,
 				this.contentSequence[ctx.session.messageIndex]
 			)
+			this.startSequence(ctx, user)
+		} else {
+			console.log('Scene entered, starting sequence...')
+			await this.sendContent(ctx, this.againMessage)
 		}
-
-		this.startSequence(ctx, user)
 	}
 
 	@PublicRoute()
@@ -55,9 +62,16 @@ export class MessageSequenceScene {
 	async action(
 		@Ctx()
 		ctx: SceneContext & {
-			session: SceneSession & { messageIndex: number; lastMessageId: number }
+			session: SceneSession & {
+				messageIndex: number
+				lastMessageId: number
+				isUpdating: boolean
+			}
 		}
 	) {
+		if (ctx.session.isUpdating) return
+		ctx.session.isUpdating = true
+
 		ctx.session.messageIndex++
 		if (ctx.session.messageIndex < this.contentSequence.length) {
 			await this.sendContent(
@@ -65,46 +79,58 @@ export class MessageSequenceScene {
 				this.contentSequence[ctx.session.messageIndex]
 			)
 		} else {
-			await ctx.reply('Сообщения завершены.')
+			await this.prisma.user.update({
+				where: {
+					telegramId: String(ctx.from.id)
+				},
+				data: {
+					isSended: true
+				}
+			})
 			console.log('All messages sent. Sequence complete.')
 		}
+
+		ctx.session.isUpdating = false
 	}
 
 	private async startSequence(
 		ctx: SceneContext & {
-			session: SceneSession & { messageIndex: number; lastMessageId: number }
+			session: SceneSession & {
+				messageIndex: number
+				lastMessageId: number
+				isUpdating: boolean
+			}
 		},
 		user: User
 	) {
-		if (user.isSended) {
-			await this.sendContent(ctx, this.againMessage)
-		} else {
-			interval(SEQUENCE_STEP_DURATION)
-				.pipe(
-					takeWhile(
-						() => ctx.session.messageIndex < this.contentSequence.length
-					),
-					concatMap(async () => {
-						if (ctx.session.messageIndex < this.contentSequence.length) {
-							await this.sendContent(
-								ctx,
-								this.contentSequence[ctx.session.messageIndex]
-							)
-							ctx.session.messageIndex++
-						} else {
-							await this.prisma.user.update({
-								where: {
-									id: user.id
-								},
-								data: {
-									isSended: true
-								}
-							})
-						}
-					})
-				)
-				.subscribe()
-		}
+		interval(SEQUENCE_STEP_DURATION)
+			.pipe(
+				takeWhile(() => ctx.session.messageIndex < this.contentSequence.length),
+				concatMap(async () => {
+					if (ctx.session.isUpdating) return 
+					ctx.session.isUpdating = true 
+
+					ctx.session.messageIndex++
+					if (ctx.session.messageIndex < this.contentSequence.length) {
+						await this.sendContent(
+							ctx,
+							this.contentSequence[ctx.session.messageIndex]
+						)
+					} else
+						await this.prisma.user.update({
+							where: {
+								id: user.id
+							},
+							data: {
+								isSended: true
+							}
+						})
+					console.log('All messages sent by interval. Sequence complete.')
+
+					ctx.session.isUpdating = false
+				})
+			)
+			.subscribe()
 	}
 
 	private async sendContent(
