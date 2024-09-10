@@ -104,7 +104,7 @@ export const contentData: {
 Meme Factory - первая Meme-To-Earn платформа, где люди постят мемы и зарабатывают на этом,
 а бренды повышают узнаваемость за счет рекламных интеграций.
         `,
-		contentUrl: `https://api.meme-factory.site/uploads/default/d151964d-2d37-4d8a-9483-ae303adcad37_meme-factory-preview.mp4`
+		contentUrl: `https://api.digital-boost.site/uploads/tg/badc0e67-74dc-450a-bb65-5172647f78f5_vid.mp4`
 	},
 
 	airdrop: {
