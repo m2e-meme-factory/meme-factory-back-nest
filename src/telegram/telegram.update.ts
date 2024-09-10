@@ -1,11 +1,14 @@
-import { UserRole } from '@prisma/client'
-import { Update, Ctx, Start, InjectBot } from 'nestjs-telegraf'
+import { TransactionType, UserRole } from '@prisma/client'
+import { Update, Ctx, Start, InjectBot, Hears } from 'nestjs-telegraf'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { UserService } from 'src/user/user.service'
 import { Context, Telegraf } from 'telegraf'
 import { InputFile } from 'telegraf/typings/core/types/typegram'
 import { SEQUENCE_SCENE_ID } from './message-sequence.scene'
 import { SceneContext, SceneSession } from 'telegraf/typings/scenes'
+import { PrismaService } from 'src/prisma/prisma.service'
+import { TransactionService } from 'src/transaction/transaction.service'
+import { Decimal } from '@prisma/client/runtime/library'
 
 const ORIGIN_URL = process.env.HOST_URL
 
@@ -13,12 +16,17 @@ const ORIGIN_URL = process.env.HOST_URL
 export class TelegramUpdate {
 	constructor(
 		@InjectBot() private readonly bot: Telegraf<Context>,
-		private readonly userService: UserService
+		private readonly userService: UserService,
+		private readonly prisma: PrismaService,
+		private readonly transactionService: TransactionService
 	) {}
 
 	@Start()
 	@PublicRoute()
-	async startCommand(@Ctx() ctx: SceneContext & { session: SceneSession & {messageIndex: number}}) {
+	async startCommand(
+		@Ctx()
+		ctx: SceneContext & { session: SceneSession & { messageIndex: number } }
+	) {
 		const messageText = ctx.text || ''
 		const params = messageText.split(' ')[1]?.split('_')
 		const inviterRefCode = params?.[0]
@@ -30,14 +38,6 @@ export class TelegramUpdate {
 			UserRole.creator,
 			metaTag
 		)
-
-		try {
-            console.log(`Entering scene: ${SEQUENCE_SCENE_ID}`);
-            await ctx.scene.enter(SEQUENCE_SCENE_ID);
-        } catch (error) {
-            console.error(`Failed to enter scene: ${error.message}`);
-        }
-
 		if (inviterRefCode && !user.isFounded) {
 			const inviter = await this.userService.getUserByRefCode(inviterRefCode)
 			if (inviter) {
@@ -45,9 +45,25 @@ export class TelegramUpdate {
 					inviter.telegramId,
 					`Ваш реферальный код был использован!`
 				)
+
+				await this.transactionService.createTransaction({
+					toUserId: inviter.id,
+					amount: new Decimal(100),
+					type: TransactionType.SYSTEM
+				})
 			}
 		}
+
+		try {
+			console.log(`Entering scene: ${SEQUENCE_SCENE_ID}`)
+			await ctx.scene.enter(SEQUENCE_SCENE_ID)
+		} catch (error) {
+			console.error(`Failed to enter scene: ${error.message}`)
+		}
+
 	}
+
+
 	async sendFilesToUser(
 		telegramId: string,
 		files: string[],
@@ -70,5 +86,18 @@ export class TelegramUpdate {
 				parse_mode: 'HTML'
 			})
 		}
+	}
+	@PublicRoute()
+	@Hears('/delete_me')
+	async deleteMe(ctx: Context) {
+		const userId = ctx.from.id
+		await this.prisma.user.update({
+			where: {
+				telegramId: String(userId)
+			},
+			data: {
+				isSended: false,
+			}
+		})
 	}
 }

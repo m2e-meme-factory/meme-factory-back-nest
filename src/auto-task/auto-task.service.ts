@@ -1,7 +1,8 @@
 import {
 	Injectable,
 	NotFoundException,
-	ForbiddenException
+	ForbiddenException,
+	InternalServerErrorException
 } from '@nestjs/common'
 import { AutoTask, TransactionType, User, UserRole } from '@prisma/client'
 import { PrismaService } from 'src/prisma/prisma.service'
@@ -31,21 +32,30 @@ export class AutoTaskService {
 	}
 
 	async applyForTask(dto: CreateAutoTaskDto, user: User): Promise<AutoTask> {
-		checkUserRole(user, UserRole.creator)
+		try {
+			await checkUserRole(user, UserRole.creator)
 
-		const { title, description, reward, url, userId, taskId } = dto
+			const { title, description, reward, url, userId, taskId, isIntegrated } = dto
 
-		const task = await this.prisma.autoTask.create({
-			data: {
-				title,
-				description,
-				reward,
-				url,
-				taskId,
-				userId
+			const task = await this.prisma.autoTask.create({
+				data: {
+					title,
+					description,
+					reward,
+					url,
+					taskId,
+					userId,
+					isIntegrated
+				}
+			})
+			return task
+		} catch (error) {
+			if (error instanceof ForbiddenException) {
+				throw new ForbiddenException(error.message)
+			} else {
+				throw new InternalServerErrorException(`apply for task: ${error}`)
 			}
-		})
-		return task
+		}
 	}
 
 	async claimTask(taskId: number, userId: number): Promise<AutoTask> {
@@ -56,10 +66,11 @@ export class AutoTaskService {
 		if (!task) {
 			throw new NotFoundException('Task not found')
 		}
-
-		const timeElapsed = new Date().getTime() - task.createdAt.getTime()
-		if (timeElapsed < 120 * 1000) {
-			throw new ForbiddenException('You cannot claim the reward yet.')
+		if (task.isIntegrated === false) {
+			const timeElapsed = new Date().getTime() - task.createdAt.getTime()
+			if (timeElapsed < 120 * 1000) {
+				throw new ForbiddenException('You cannot claim the reward yet.')
+			}
 		}
 
 		const updatedTask = await this.prisma.$transaction(async prisma => {

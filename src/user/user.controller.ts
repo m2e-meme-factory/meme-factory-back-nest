@@ -24,7 +24,11 @@ import {
 } from '@nestjs/swagger'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { User, UserRole } from '@prisma/client'
-import { UpdateUserBalanceDto, UpdateUserRoleDto } from './dto/user.dto'
+import {
+	UpdateUserBalanceDto,
+	UpdateUserRoleDto,
+	VerifyUserDto
+} from './dto/user.dto'
 import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
 
 @ApiTags('users')
@@ -76,10 +80,12 @@ export class UserController {
 		}
 	})
 	@ApiBadRequestResponse({ description: 'Bad Request.' })
-	async isUserVerified(@Body() body): Promise<{ isUser: boolean }> {
-		const { userId } = body
+	async isUserVerified(
+		@Body() verifyUserDto: VerifyUserDto
+	): Promise<{ isUser: boolean }> {
 		try {
-			return await this.userService.isUserVerified(userId)
+			const { telegramId } = verifyUserDto
+			return await this.userService.isUserVerified(telegramId)
 		} catch (error) {
 			throw new BadRequestException(error.message)
 		}
@@ -87,6 +93,7 @@ export class UserController {
 
 	@Post('verify_user')
 	@HttpCode(HttpStatus.OK)
+	@ApiBody({ description: 'telegramId', type: VerifyUserDto })
 	@ApiOkResponse({
 		description: 'Verifies the user and returns the updated user data.',
 		schema: {
@@ -113,10 +120,10 @@ export class UserController {
 		}
 	})
 	@ApiBadRequestResponse({ description: 'Bad Request.' })
-	async verifyUser(@Body() body) {
-		const { userId } = body
+	async verifyUser(@Body() verifyUserDto: VerifyUserDto) {
 		try {
-			return await this.userService.verifyUser(userId)
+			const { telegramId } = verifyUserDto
+			return await this.userService.verifyUser(telegramId)
 		} catch (error) {
 			throw new BadRequestException(error.message)
 		}
@@ -170,7 +177,7 @@ export class UserController {
 				id: { type: 'number' },
 				telegramId: { type: 'string' },
 				username: { type: 'string' },
-				role: {type: UserRole.creator},
+				role: { type: UserRole.creator },
 				balance: { type: 'number' },
 				isBaned: { type: 'boolean' },
 				isVerified: { type: 'boolean' },
@@ -245,7 +252,7 @@ export class UserController {
 					id: { type: 'number' },
 					telegramId: { type: 'string' },
 					username: { type: 'string' },
-					role: {type: UserRole.creator},
+					role: { type: UserRole.creator },
 					balance: { type: 'number' },
 					isBaned: { type: 'boolean' },
 					isVerified: { type: 'boolean' },
@@ -287,7 +294,7 @@ export class UserController {
 				id: { type: 'number' },
 				telegramId: { type: 'string' },
 				username: { type: 'string' },
-				role: {type: UserRole.creator},
+				role: { type: UserRole.creator },
 				balance: { type: 'number' },
 				isBaned: { type: 'boolean' },
 				isVerified: { type: 'boolean' },
@@ -327,14 +334,14 @@ export class UserController {
 				id: { type: 'number' },
 				telegramId: { type: 'string' },
 				username: { type: 'string' },
-				role: {type: UserRole.creator},
+				role: { type: UserRole.creator },
 				balance: { type: 'number' },
 				isBaned: { type: 'boolean' },
 				isVerified: { type: 'boolean' },
 				createdAt: { type: 'string', format: 'date-time' },
 				inviterRefCode: { type: 'string', nullable: true },
 				refCode: { type: 'string' }
-			},
+			}
 		}
 	})
 	@ApiBadRequestResponse({ description: 'Bad Request.' })

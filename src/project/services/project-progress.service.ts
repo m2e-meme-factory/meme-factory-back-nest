@@ -18,7 +18,7 @@ export class ProjectProgressService {
 	) {}
 
 	async applyToProject(user: User, projectId: number, message: string = '') {
-		checkUserRole(user, UserRole.creator)
+		await checkUserRole(user, UserRole.creator)
 		try {
 			let progressProject = await this.prisma.progressProject.findFirst({
 				where: {
@@ -210,7 +210,7 @@ export class ProjectProgressService {
 		status: ProgressStatus,
 		message: string
 	) {
-		checkUserRole(user, UserRole.advertiser)
+		await checkUserRole(user, UserRole.advertiser)
 		const projectId = await (
 			await this.prisma.progressProject.findUnique({
 				where: { id: progressProjectId }
