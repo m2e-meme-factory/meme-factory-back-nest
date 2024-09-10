@@ -215,15 +215,18 @@ export class ProjectProgressService {
 		status: ProgressStatus,
 		message: string,
 	) {
-		if (!user.isVerified)
+		if (!user.isVerified) {
+
+
 			await checkUserRole(user, UserRole.advertiser)
-		
-		const projectId = await (
-			await this.prisma.progressProject.findUnique({
-				where: { id: progressProjectId }
-			})
-		).projectId
-		checkProjectOwnership(projectId, user.id)
+			
+			const projectId = await (
+				await this.prisma.progressProject.findUnique({
+					where: { id: progressProjectId }
+				})
+			).projectId
+			checkProjectOwnership(projectId, user.id)
+		} 
 		try {
 			const updatedProgressProject = await this.prisma.progressProject.update({
 				where: { id: progressProjectId },
