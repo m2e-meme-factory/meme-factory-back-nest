@@ -33,7 +33,9 @@ export class TransactionService {
 				)
 			}
 
-			const transaction = await prisma.transaction.create({ data })
+			const transaction = await prisma.transaction.create({
+				data
+			})
 
 			return transaction
 		})

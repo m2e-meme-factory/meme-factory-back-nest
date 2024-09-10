@@ -5,6 +5,8 @@ import { MessageSequenceScene } from './message-sequence.scene';
 import { UserService } from 'src/user/user.service';
 import { Agent } from 'https';
 import { session } from 'telegraf';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { TransactionService } from 'src/transaction/transaction.service';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { session } from 'telegraf';
     TelegramUpdate,
     MessageSequenceScene,
     UserService,
+    PrismaService,
+    TransactionService,
     {
       provide: 'TELEGRAM_SCENES',
       useFactory: (messageSequenceScene: MessageSequenceScene) => {

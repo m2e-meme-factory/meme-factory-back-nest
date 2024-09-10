@@ -1,4 +1,11 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator'
+import {
+	IsBoolean,
+	IsInt,
+	IsNotEmpty,
+	IsOptional,
+	IsString,
+	IsUrl
+} from 'class-validator'
 import { ApiProperty } from '@nestjs/swagger'
 import { Decimal } from '@prisma/client/runtime/library'
 
@@ -58,6 +65,10 @@ export class CreateAutoTaskDto {
 	})
 	@IsOptional()
 	createdAt?: Date
+
+	@ApiProperty({ example: false })
+	@IsBoolean()
+	isIntegrated: boolean
 }
 export class GetAutoTaskDto {
 	@ApiProperty({
@@ -120,6 +131,14 @@ export class GetAutoTaskDto {
 		example: '2024-01-01T00:00:00.000Z',
 		readOnly: true
 	})
+	@ApiProperty({ example: false })
+	@IsBoolean()
+	isIntegrated: boolean
+
+	@ApiProperty({ example: false })
+	@IsBoolean()
+	isConfirmed: boolean
+
 	@IsOptional()
 	createdAt?: Date
 }

@@ -36,6 +36,7 @@ model User {
   role                UserRole             @default(creator)
   events              Event[]
   balance             Decimal              @default(0)
+  isSended            Boolean              @default(false)
 
   transactionsSent     Transaction[] @relation("FromUser")
   transactionsReceived Transaction[] @relation("ToUser")
@@ -99,6 +100,7 @@ model AutoTask {
   taskId      Int
   user        User     @relation(fields: [userId], references: [id])
   isConfirmed Boolean  @default(false)
+  isIntegrated Boolean @default(false)
   createdAt   DateTime @default(now())
 }
 
@@ -121,7 +123,7 @@ model UndelitableMessage {
 model Transaction {
   id         Int             @id @default(autoincrement())
   projectId  Int?
-  taskId     Int
+  taskId     Int?
   fromUserId Int?
   toUserId   Int
   amount     Decimal

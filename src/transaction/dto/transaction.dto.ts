@@ -11,8 +11,8 @@ export class CreateTransactionDto {
 
 	@ApiProperty()
 	@IsInt()
-	@IsNotEmpty()
-	taskId: number
+	@IsOptional()
+	taskId?: number
 
 	@ApiProperty()
 	// @IsInt()

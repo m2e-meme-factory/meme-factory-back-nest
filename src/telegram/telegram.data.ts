@@ -88,6 +88,7 @@ export const contentData: {
 	airdrop: IContentSection
 	sky: IContentSection
 	firstAdvertiser: IContentSection
+	againMessage: IContentSection
 } = {
 	first: {
 		caption: `
@@ -95,8 +96,7 @@ export const contentData: {
 
 С нами ты можешь стать мощным инфлюенсером и продвигать бренды со всего мира!
         `,
-		contentUrl:
-			`https://api.meme-factory.site/uploads/default/3d2547be-a98a-401f-b7fe-3d2304725bb0_first-image.jpg`
+		contentUrl: `https://api.meme-factory.site/uploads/default/3d2547be-a98a-401f-b7fe-3d2304725bb0_first-image.jpg`
 	},
 
 	memeFactory: {
@@ -104,7 +104,7 @@ export const contentData: {
 Meme Factory - первая Meme-To-Earn платформа, где люди постят мемы и зарабатывают на этом,
 а бренды повышают узнаваемость за счет рекламных интеграций.
         `,
-        contentUrl: `https://api.meme-factory.site/uploads/default/d151964d-2d37-4d8a-9483-ae303adcad37_meme-factory-preview.mp4`
+		contentUrl: `https://api.meme-factory.site/uploads/default/d151964d-2d37-4d8a-9483-ae303adcad37_meme-factory-preview.mp4`
 	},
 
 	airdrop: {
@@ -116,8 +116,7 @@ Meme Factory - первая Meme-To-Earn платформа, где люди п�
 - Делай активности (комментируй, лайкай и т.д.)
 И участвуй в эйрдроп
         `,
-		contentUrl:
-			`https://api.meme-factory.site/uploads/default/0ee3df42-66a3-4765-9437-35321a2d4e74_airdrop.jpg`
+		contentUrl: `https://api.meme-factory.site/uploads/default/0ee3df42-66a3-4765-9437-35321a2d4e74_airdrop.jpg`
 	},
 
 	sky: {
@@ -149,8 +148,15 @@ Meme Factory - первая Meme-To-Earn платформа, где люди п�
 
 Нажми "Запустить Фабрику" и мы начнем
         `,
-		contentUrl:
-			`https://api.meme-factory.site/uploads/default/eefd6e10-2b90-4f2d-ab9b-ab4ee1a2592f_first-advertiser.jpg`,
+		contentUrl: `https://api.meme-factory.site/uploads/default/eefd6e10-2b90-4f2d-ab9b-ab4ee1a2592f_first-advertiser.jpg`,
 		buttonText: 'Запустить Фабрику'
+	},
+	againMessage: {
+		caption: `
+Рад тебя снова видеть!
+
+⚡️ Скорее заходи в платформу, чтобы проверить новые задания!
+        `,
+		buttonText: 'Открыть приложение'
 	}
 }
