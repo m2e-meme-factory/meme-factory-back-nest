@@ -64,6 +64,11 @@ export class ProjectProgressService {
 				message
 			})
 
+			if (user.isVerified && progressProject.status == "pending") {
+				console.log(user.isVerified, progressProject.status)
+				await this.updateProjectProgressStatus(user, progressProject.id, "accepted", "Верефецированный пользоватлеь автоматически принят в проект")
+			}
+
 			return progressProject
 		} catch (error) {
 			throw new InternalServerErrorException(
@@ -208,9 +213,11 @@ export class ProjectProgressService {
 		user: User,
 		progressProjectId: number,
 		status: ProgressStatus,
-		message: string
+		message: string,
 	) {
-		await checkUserRole(user, UserRole.advertiser)
+		if (!user.isVerified)
+			await checkUserRole(user, UserRole.advertiser)
+		
 		const projectId = await (
 			await this.prisma.progressProject.findUnique({
 				where: { id: progressProjectId }

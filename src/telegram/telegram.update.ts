@@ -43,7 +43,7 @@ export class TelegramUpdate {
 			if (inviter) {
 				await this.bot.telegram.sendMessage(
 					inviter.telegramId,
-					`Ваш реферальный код был использован!`
+					`Ваш реферальный код был использован! ${metaTag ? `\nМета тег: ${metaTag}` : ''}`
 				)
 
 				await this.transactionService.createTransaction({
