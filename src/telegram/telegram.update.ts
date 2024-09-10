@@ -1,4 +1,4 @@
-import { TransactionType, UserRole } from '@prisma/client'
+import {  UserRole } from '@prisma/client'
 import { Update, Ctx, Start, InjectBot, Hears } from 'nestjs-telegraf'
 import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { UserService } from 'src/user/user.service'
@@ -7,8 +7,6 @@ import { InputFile } from 'telegraf/typings/core/types/typegram'
 import { SEQUENCE_SCENE_ID } from './message-sequence.scene'
 import { SceneContext, SceneSession } from 'telegraf/typings/scenes'
 import { PrismaService } from 'src/prisma/prisma.service'
-import { TransactionService } from 'src/transaction/transaction.service'
-import { Decimal } from '@prisma/client/runtime/library'
 
 const ORIGIN_URL = process.env.HOST_URL
 
@@ -18,7 +16,6 @@ export class TelegramUpdate {
 		@InjectBot() private readonly bot: Telegraf<Context>,
 		private readonly userService: UserService,
 		private readonly prisma: PrismaService,
-		private readonly transactionService: TransactionService
 	) {}
 
 	@Start()
@@ -31,28 +28,14 @@ export class TelegramUpdate {
 		const params = messageText.split(' ')[1]?.split('_')
 		const inviterRefCode = params?.[0]
 		const metaTag = params?.[1]
-		const user = await this.userService.findOrCreateUser(
+		await this.userService.findOrCreateUser(
 			ctx.from.id,
 			ctx.from.username,
 			inviterRefCode,
 			UserRole.creator,
 			metaTag
 		)
-		if (inviterRefCode && !user.isFounded) {
-			const inviter = await this.userService.getUserByRefCode(inviterRefCode)
-			if (inviter) {
-				await this.bot.telegram.sendMessage(
-					inviter.telegramId,
-					`Ваш реферальный код был использован! ${metaTag ? `\nМета тег: ${metaTag}` : ''}`
-				)
-
-				await this.transactionService.createTransaction({
-					toUserId: inviter.id,
-					amount: new Decimal(100),
-					type: TransactionType.SYSTEM
-				})
-			}
-		}
+		
 
 		try {
 			console.log(`Entering scene: ${SEQUENCE_SCENE_ID}`)
