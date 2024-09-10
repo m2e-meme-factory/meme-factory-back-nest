@@ -60,6 +60,15 @@ export class AuthService {
 						type: TransactionType.SYSTEM
 					})
 				}
+
+				await this.prisma.user.update({
+					where: {
+						id: user.id
+					},
+					data: {
+						wasOpened: true
+					}
+				})
 			}
 			return {
 				user: user,
