@@ -1,4 +1,5 @@
 import {
+	ForbiddenException,
 	Injectable,
 	InternalServerErrorException,
 	UnauthorizedException
@@ -215,16 +216,35 @@ export class ProjectProgressService {
 		status: ProgressStatus,
 		message: string,
 	) {
-		if (!user.isVerified)
+		if (!user.isVerified) {
+
+
 			await checkUserRole(user, UserRole.advertiser)
-		
-		const projectId = await (
-			await this.prisma.progressProject.findUnique({
-				where: { id: progressProjectId }
-			})
-		).projectId
-		checkProjectOwnership(projectId, user.id)
+			
+			const projectId = await (
+				await this.prisma.progressProject.findUnique({
+					where: { id: progressProjectId }
+				})
+			).projectId
+			checkProjectOwnership(projectId, user.id)
+		} 
 		try {
+			const progressProject = await this.prisma.progressProject.findUnique({where: {
+				id: progressProjectId
+			}})
+
+			const project = await (
+				await this.prisma.project.findUnique({
+					where: { id: progressProject.projectId }
+				})
+			)
+
+
+			if (user.id !== progressProject.userId || user.id !== project.authorId) 
+			{
+				throw new ForbiddenException('You can not perform this action: only verified users and owners of project can')
+			}
+
 			const updatedProgressProject = await this.prisma.progressProject.update({
 				where: { id: progressProjectId },
 				data: { status: status }
