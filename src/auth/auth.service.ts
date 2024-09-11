@@ -37,7 +37,7 @@ export class AuthService {
 				parsedData.user.username
 			)
 			const payload = { id: user.id }
-			if (!user.wasOpened && user.inviterRefCode && !isFounded) {
+			if (!user.wasOpened && user.inviterRefCode) {
 				const inviter = await this.userService.getUserByRefCode(
 					user.inviterRefCode
 				)
@@ -51,7 +51,7 @@ export class AuthService {
 				if (inviter) {
 					await this.bot.telegram.sendMessage(
 						inviter.telegramId,
-						`Ваш реферальный код был использован! ${metaTag ? `\nМета тег: ${metaTag}` : ''}`
+						`Ваш реферальный код был использован! ${metaTag ? `\nМета тег: ${metaTag.tag}` : ''}`
 					)
 
 					await this.transactionService.createTransaction({
