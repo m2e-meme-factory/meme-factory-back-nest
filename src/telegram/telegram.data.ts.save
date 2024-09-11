@@ -19,8 +19,8 @@ export const contentData: {
 
 С нами ты можешь стать мощным инфлюенсером и продвигать бренды со всего мира!
         `,
-		buttonText: 'Я Готов!',
-		contentUrl: `https://api.meme-factory.site/uploads/default/3d2547be-a98a-401f-b7fe-3d2304725bb0_first-image.jpg`
+		contentUrl: `https://api.meme-factory.site/uploads/default/3d2547be-a98a-401f-b7fe-3d2304725bb0_first-image.jpg`,
+		buttonText: 'Я готов!'
 	},
 
 	memeFactory: {
@@ -28,8 +28,8 @@ export const contentData: {
 Meme Factory - первая Meme-To-Earn платформа, где люди постят мемы и зарабатывают на этом,
 а бренды повышают узнаваемость за счет рекламных интеграций.
         `,
-		buttonText: 'Начать!',
-		contentUrl: `https://api.digital-boost.site/uploads/tg/badc0e67-74dc-450a-bb65-5172647f78f5_vid.mp4`
+		contentUrl: `https://api.digital-boost.site/uploads/tg/badc0e67-74dc-450a-bb65-5172647f78f5_vid.mp4`,
+		 buttonText: 'Начать!'
 	},
 
 	airdrop: {
@@ -41,8 +41,8 @@ Meme Factory - первая Meme-To-Earn платформа, где люди п�
 - Делай активности (комментируй, лайкай и т.д.)
 И участвуй в эйрдроп
         `,
-		buttonText: 'Участвовать!',
-		contentUrl: `https://api.meme-factory.site/uploads/default/0ee3df42-66a3-4765-9437-35321a2d4e74_airdrop.jpg`
+		contentUrl: `https://api.meme-factory.site/uploads/default/0ee3df42-66a3-4765-9437-35321a2d4e74_airdrop.jpg`,
+		buttonText: 'Участвовать!'
 	},
 
 	sky: {
@@ -83,6 +83,6 @@ Meme Factory - первая Meme-To-Earn платформа, где люди п�
 
 ⚡️ Скорее заходи в платформу, чтобы проверить новые задания!
         `,
-		buttonText: 'Запустить Фабрику'
+		buttonText: 'Запустить фабрику'
 	}
 }
