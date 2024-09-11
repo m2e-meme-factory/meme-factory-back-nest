@@ -37,6 +37,7 @@ model User {
   events              Event[]
   balance             Decimal              @default(0)
   isSended            Boolean              @default(false)
+  wasOpened           Boolean              @default(false)
 
   transactionsSent     Transaction[] @relation("FromUser")
   transactionsReceived Transaction[] @relation("ToUser")
@@ -91,17 +92,17 @@ model Task {
 }
 
 model AutoTask {
-  id          Int      @id @default(autoincrement())
-  title       String?
-  description String?
-  reward      Decimal
-  url         String?
-  userId      Int
-  taskId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  isConfirmed Boolean  @default(false)
-  isIntegrated Boolean @default(false)
-  createdAt   DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  title        String?
+  description  String?
+  reward       Decimal
+  url          String?
+  userId       Int
+  taskId       Int
+  user         User     @relation(fields: [userId], references: [id])
+  isConfirmed  Boolean  @default(false)
+  isIntegrated Boolean  @default(false)
+  createdAt    DateTime @default(now())
 }
 
 model ProjectTask {
