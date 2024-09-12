@@ -1,15 +1,18 @@
 import {
-	Injectable,
-	NotFoundException,
 	ForbiddenException,
-	InternalServerErrorException
+	Injectable,
+	InternalServerErrorException,
+	NotFoundException
 } from '@nestjs/common'
-import { AutoTask, TransactionType, User, UserRole } from '@prisma/client'
-import { PrismaService } from 'src/prisma/prisma.service'
-import { CreateAutoTaskDto } from './dto/create-auto-task.dto'
-import { TransactionService } from 'src/transaction/transaction.service'
+import {
+	AutoTask,
+	AutoTaskApplication,
+	TransactionType,
+	User
+} from '@prisma/client'
 import { CreateTransactionDto } from 'src/transaction/dto/transaction.dto'
-import { checkUserRole } from 'src/project/project.utils'
+import { TransactionService } from 'src/transaction/transaction.service'
+import { PrismaService } from 'src/prisma/prisma.service'
 
 @Injectable()
 export class AutoTaskService {
@@ -18,79 +21,126 @@ export class AutoTaskService {
 		private readonly transactionService: TransactionService
 	) {}
 
-	async getAllAutoTasks(userId?: number): Promise<AutoTask[]> {
+	async getAutoTaskApplications(
+		userId?: number,
+		taskId?: number
+	): Promise<AutoTaskApplication[]> {
+		try {
+			const whereClause: any = {}
+
+			if (userId) {
+				whereClause.userId = userId
+			}
+
+			if (taskId) {
+				whereClause.taskId = taskId
+			}
+
+			const applications = await this.prisma.autoTaskApplication.findMany({
+				where: whereClause,
+				include: {
+					task: true,
+					user: true
+				}
+			})
+
+			return applications
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Error fetching auto task applications: ${error}`
+			)
+		}
+	}
+
+	async getAllAutoTasks(): Promise<AutoTask[]> {
 		return await this.prisma.autoTask.findMany({
-			where: userId ? { userId } : {}
+			include: { autoTaskApplication: true }
 		})
 	}
 
 	async getAutoTaskById(id: number): Promise<AutoTask | null> {
 		return await this.prisma.autoTask.findUnique({
 			where: { id },
-			include: { user: true }
+			include: { autoTaskApplication: true }
 		})
 	}
 
-	async applyForTask(dto: CreateAutoTaskDto, user: User): Promise<AutoTask> {
+	async applyForTask(taskId: number, user: User): Promise<AutoTaskApplication> {
 		try {
-			await checkUserRole(user, UserRole.creator)
+			const task = await this.prisma.autoTask.findUnique({
+				where: { id: taskId }
+			})
 
-			const { title, description, reward, url, userId, taskId, isIntegrated } = dto
+			if (!task) {
+				throw new NotFoundException('Task not found')
+			}
 
-			const task = await this.prisma.autoTask.create({
+			const existingApplication =
+				await this.prisma.autoTaskApplication.findUnique({
+					where: { userId_taskId: { userId: user.id, taskId } }
+				})
+
+			if (existingApplication) {
+				throw new ForbiddenException('You have already applied for this task.')
+			}
+
+			const application = await this.prisma.autoTaskApplication.create({
 				data: {
-					title,
-					description,
-					reward,
-					url,
-					taskId,
-					userId,
-					isIntegrated
+					userId: user.id,
+					taskId
 				}
 			})
-			return task
+
+			return application
 		} catch (error) {
-			if (error instanceof ForbiddenException) {
-				throw new ForbiddenException(error.message)
-			} else {
-				throw new InternalServerErrorException(`apply for task: ${error}`)
-			}
+			throw new InternalServerErrorException(
+				`Error applying for task: ${error}`
+			)
 		}
 	}
 
-	async claimTask(taskId: number, userId: number): Promise<AutoTask> {
-		const task = await this.prisma.autoTask.findFirst({
-			where: { id: taskId, userId }
+	async claimTask(
+		taskId: number,
+		userId: number
+	): Promise<AutoTaskApplication> {
+		const application = await this.prisma.autoTaskApplication.findFirst({
+			where: { taskId, userId },
+			include: { task: true }
 		})
 
-		if (!task) {
-			throw new NotFoundException('Task not found')
+		const task = await this.prisma.autoTask.findFirst({ where: { id: taskId } })
+
+		if (!application) {
+			throw new NotFoundException('Application not found')
 		}
-		if (task.isIntegrated === false) {
-			const timeElapsed = new Date().getTime() - task.createdAt.getTime()
+		if (application.isConfirmed) {
+			throw new ForbiddenException('Task already claimed.')
+		}
+		if (!task.isIntegrated) {
+			const timeElapsed = new Date().getTime() - application.createdAt.getTime()
 			if (timeElapsed < 120 * 1000) {
 				throw new ForbiddenException('You cannot claim the reward yet.')
 			}
 		}
 
-		const updatedTask = await this.prisma.$transaction(async prisma => {
-			const confirmedTask = await prisma.autoTask.update({
-				where: { id: task.id },
+		const updatedApplication = await this.prisma.$transaction(async prisma => {
+			const confirmedApplication = await prisma.autoTaskApplication.update({
+				where: { id: application.id },
 				data: { isConfirmed: true }
 			})
 
 			const createTransactionDto: CreateTransactionDto = {
-				taskId: confirmedTask.id,
+				taskId: confirmedApplication.taskId,
 				toUserId: userId,
-				amount: task.reward,
+				amount: application.task.reward,
 				type: TransactionType.SYSTEM
 			}
 
 			await this.transactionService.createTransaction(createTransactionDto)
 
-			return confirmedTask
+			return confirmedApplication
 		})
 
-		return updatedTask
+		return updatedApplication
 	}
 }

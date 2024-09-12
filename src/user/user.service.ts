@@ -7,7 +7,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service'
 import { v4 as uuidv4 } from 'uuid'
 import { IUser } from './types/user.types'
-import { User, UserRole } from '@prisma/client'
+import { User } from '@prisma/client'
 import { Decimal } from '@prisma/client/runtime/library'
 
 @Injectable()
@@ -212,20 +212,7 @@ export class UserService {
 		return user
 	}
 
-	async updateUserRole(id: number, role: UserRole): Promise<User> {
-		try {
-			const user = await this.prisma.user.update({
-				where: { id },
-				data: { role }
-			})
 
-			return user
-		} catch (error) {
-			throw new InternalServerErrorException(
-				`Ошибка при обновлении роли пользователя: ${error}`
-			)
-		}
-	}
 	async updateUserBalance(id: number, balance: Decimal): Promise<User> {
 		try {
 			const user = await this.prisma.user.update({
