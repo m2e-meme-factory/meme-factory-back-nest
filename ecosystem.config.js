@@ -1,7 +1,7 @@
 module.exports = {
     apps: [
         {
-            name: "dev-meme-factory-nest",
+            name: "mf-back",
             script: "yarn",
             automation: false,
             args: "start",

@@ -216,6 +216,7 @@ export class ProjectProgressService {
 		status: ProgressStatus,
 		message: string,
 	) {
+		console.log("try to reject:", progressProjectId)
 		if (!user.isVerified) {
 
 
@@ -228,7 +229,7 @@ export class ProjectProgressService {
 			).projectId
 			checkProjectOwnership(projectId, user.id)
 		} 
-		try {
+		// try {
 			const progressProject = await this.prisma.progressProject.findUnique({where: {
 				id: progressProjectId
 			}})
@@ -240,10 +241,10 @@ export class ProjectProgressService {
 			)
 
 
-			if (user.id !== progressProject.userId || user.id !== project.authorId) 
-			{
-				throw new ForbiddenException('You can not perform this action: only verified users and owners of project can')
-			}
+			// if (user.id !== progressProject.userId || user.id !== project.authorId) 
+			// {
+			// 	throw new ForbiddenException('You can not perform this action: only verified users and owners of project can')
+			// }
 
 			const updatedProgressProject = await this.prisma.progressProject.update({
 				where: { id: progressProjectId },
@@ -274,10 +275,10 @@ export class ProjectProgressService {
 			})
 
 			return updatedProgressProject
-		} catch (error) {
-			throw new InternalServerErrorException(
-				'Ошибка при обновлении статуса заявки'
-			)
-		}
+		// } catch (error) {
+		// 	throw new InternalServerErrorException(
+		// 		'Ошибка при обновлении статуса заявки'
+		// 	)
+		// }
 	}
 }

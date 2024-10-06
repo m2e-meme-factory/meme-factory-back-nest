@@ -155,8 +155,8 @@ export class UserService {
 		const count = await this.prisma.user.count({
 			where: { inviterRefCode: user.refCode }
 		})
-		// TODO: get bot name from bot.telegram.me
-		const refLink = `https://t.me/miniapped_bot?start=${user.refCode}`
+		// TODO: get bot name from bot.telegram.me or .env
+		const refLink = `https://t.me/mf_ton_bot?start=${user.refCode}`
 
 		return { count, refLink }
 	}
@@ -230,7 +230,7 @@ export class UserService {
 		try {
 			const user = await this.prisma.user.update({
 				where: { id },
-				data: { balance }
+				data: { balance: balance.toString() }
 			})
 
 			return user

@@ -1,4 +1,4 @@
-import { Markup } from 'telegraf'
+import { Input, Markup } from 'telegraf'
 import { Injectable } from '@nestjs/common'
 import { contentData, IContentSection } from './telegram.data'
 import { interval } from 'rxjs'
@@ -19,8 +19,8 @@ export class MessageSequenceScene {
 	private contentSequence: IContentSection[] = [
 		contentData.first,
 		contentData.memeFactory,
-		contentData.airdrop,
-		contentData.sky,
+		// contentData.airdrop,
+		// contentData.sky,
 		contentData.firstAdvertiser
 	]
 	private againMessage = contentData.againMessage
@@ -157,15 +157,17 @@ export class MessageSequenceScene {
 			}
 
 			let message
+			const input = Input.fromLocalFile("./assets/" + contentUrl)
+
 			if (contentUrl) {
 				if (contentUrl.endsWith('.mp4')) {
 					message = await ctx.replyWithVideo(
-						{ url: contentUrl },
+						input,
 						{ caption, ...replyMarkup }
-					)
+					) 
 				} else {
 					message = await ctx.replyWithPhoto(
-						{ url: contentUrl },
+						input,
 						{ caption, ...replyMarkup }
 					)
 				}
