@@ -276,7 +276,7 @@ export class ProjectProgressService {
 			return updatedProgressProject
 		} catch (error) {
 			throw new InternalServerErrorException(
-				'Ошибка при обновлении статуса заявки'
+				`Ошибка при обновлении статуса заявки: ${error}`
 			)
 		}
 	}

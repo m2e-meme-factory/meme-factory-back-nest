@@ -12,7 +12,7 @@ import { Decimal } from '@prisma/client/runtime/library'
 
 @Injectable()
 export class UserService {
-	constructor(private readonly prisma: PrismaService) { }
+	constructor(private readonly prisma: PrismaService) {}
 
 	// func for test
 	// async createUser(createUserDto: CreateUserDto): Promise<IUser> {
@@ -57,7 +57,7 @@ export class UserService {
 				telegramId: telegramId.toString()
 			}
 		})
-		if(user) {
+		if (user) {
 			isFounded = true
 		}
 
@@ -94,7 +94,7 @@ export class UserService {
 				})
 			}
 		}
-		return {user,isFounded}
+		return { user, isFounded }
 	}
 
 	async isUserVerified(userId: string): Promise<{ isUser: boolean }> {
@@ -211,7 +211,6 @@ export class UserService {
 
 		return user
 	}
-
 
 	async updateUserBalance(id: number, balance: Decimal): Promise<User> {
 		try {
