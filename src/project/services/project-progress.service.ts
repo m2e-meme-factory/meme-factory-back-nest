@@ -242,8 +242,7 @@ export class ProjectProgressService {
 				where: { id: progressProject.projectId }
 			})
 
-			if (user.id !== progressProject.userId || user.id !== project.authorId) {
-				console.log(user.id, progressProject.userId, project.authorId)
+			if (user.id !== progressProject.userId && user.id !== project.authorId) {
 				throw new ForbiddenException(
 					'You can not perform this action: only verified users and owners of project can'
 				)
