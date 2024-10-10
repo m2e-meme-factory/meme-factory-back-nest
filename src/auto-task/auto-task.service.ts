@@ -118,7 +118,7 @@ export class AutoTaskService {
 		}
 		if (!task.isIntegrated) {
 			const timeElapsed = new Date().getTime() - application.createdAt.getTime()
-			if (timeElapsed < 120 * 1000) {
+			if (timeElapsed < 5 * 1000) {
 				throw new ForbiddenException('You cannot claim the reward yet.')
 			}
 		}
