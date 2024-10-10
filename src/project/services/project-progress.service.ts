@@ -71,7 +71,7 @@ export class ProjectProgressService {
 					user,
 					progressProject.id,
 					'accepted',
-					'Верефецированный пользоватлеь автоматически принят в проект'
+					'A verified user is automatically accepted into the project'
 				)
 			}
 
