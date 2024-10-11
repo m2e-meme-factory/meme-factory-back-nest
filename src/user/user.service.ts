@@ -7,12 +7,12 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service'
 import { v4 as uuidv4 } from 'uuid'
 import { IUser } from './types/user.types'
-import { User, UserRole } from '@prisma/client'
+import { User } from '@prisma/client'
 import { Decimal } from '@prisma/client/runtime/library'
 
 @Injectable()
 export class UserService {
-	constructor(private readonly prisma: PrismaService) { }
+	constructor(private readonly prisma: PrismaService) {}
 
 	// func for test
 	// async createUser(createUserDto: CreateUserDto): Promise<IUser> {
@@ -57,7 +57,7 @@ export class UserService {
 				telegramId: telegramId.toString()
 			}
 		})
-		if(user) {
+		if (user) {
 			isFounded = true
 		}
 
@@ -94,7 +94,7 @@ export class UserService {
 				})
 			}
 		}
-		return {user,isFounded}
+		return { user, isFounded }
 	}
 
 	async isUserVerified(userId: string): Promise<{ isUser: boolean }> {
@@ -155,7 +155,8 @@ export class UserService {
 		const count = await this.prisma.user.count({
 			where: { inviterRefCode: user.refCode }
 		})
-		// TODO: get bot name from bot.telegram.me
+		// TODO: get bot name from bot.telegram.me 
+		// like that: https://t.me/${this.bot.botInfo.username}?start=${user.refCode}
 		const refLink = `https://t.me/miniapped_bot?start=${user.refCode}`
 
 		return { count, refLink }
@@ -212,20 +213,6 @@ export class UserService {
 		return user
 	}
 
-	async updateUserRole(id: number, role: UserRole): Promise<User> {
-		try {
-			const user = await this.prisma.user.update({
-				where: { id },
-				data: { role }
-			})
-
-			return user
-		} catch (error) {
-			throw new InternalServerErrorException(
-				`Ошибка при обновлении роли пользователя: ${error}`
-			)
-		}
-	}
 	async updateUserBalance(id: number, balance: Decimal): Promise<User> {
 		try {
 			const user = await this.prisma.user.update({

@@ -26,7 +26,6 @@ import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
 import { User, UserRole } from '@prisma/client'
 import {
 	UpdateUserBalanceDto,
-	UpdateUserRoleDto,
 	VerifyUserDto
 } from './dto/user.dto'
 import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
@@ -354,37 +353,7 @@ export class UserController {
 		}
 	}
 
-	@Put(':id/role')
-	@ApiOperation({ summary: 'Изменить роль пользователя' })
-	@ApiParam({ name: 'id', description: 'ID пользователя' })
-	@ApiBody({ type: UpdateUserRoleDto })
-	@ApiResponse({
-		status: 200,
-		description: 'Роль пользователя успешно обновлена.',
-		schema: {
-			example: {
-				id: 1,
-				telegramId: '1234567',
-				username: '1234567',
-				role: UserRole.creator,
-				balance: 0,
-				isBaned: false,
-				isVerified: true,
-				createdAt: '2024-07-31T15:19:16.000Z',
-				inviterRefCode: null,
-				refCode: '1234567'
-			}
-		}
-	})
-	@ApiResponse({ status: 400, description: 'Неверные данные запроса.' })
-	@ApiResponse({ status: 404, description: 'Пользователь не найден.' })
-	@ApiResponse({ status: 403, description: 'Доступ запрещен.' })
-	async updateUserRole(
-		@Param('id', IdValidationPipe) id: number,
-		@Body() updateUserRoleDto: UpdateUserRoleDto
-	): Promise<User> {
-		return this.userService.updateUserRole(id, updateUserRoleDto.role)
-	}
+
 	@Put(':id/balance')
 	@ApiOperation({ summary: 'Изменить баланс пользователя' })
 	@ApiParam({ name: 'id', description: 'ID пользователя' })

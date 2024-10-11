@@ -65,9 +65,14 @@ export class ProjectProgressService {
 				message
 			})
 
-			if (user.isVerified && progressProject.status == "pending") {
+			if (user.isVerified && progressProject.status == 'pending') {
 				console.log(user.isVerified, progressProject.status)
-				await this.updateProjectProgressStatus(user, progressProject.id, "accepted", "Верефецированный пользоватлеь автоматически принят в проект")
+				await this.updateProjectProgressStatus(
+					user,
+					progressProject.id,
+					'accepted',
+					'A verified user is automatically accepted into the project'
+				)
 			}
 
 			return progressProject
@@ -214,35 +219,33 @@ export class ProjectProgressService {
 		user: User,
 		progressProjectId: number,
 		status: ProgressStatus,
-		message: string,
+		message: string
 	) {
 		if (!user.isVerified) {
-
-
 			await checkUserRole(user, UserRole.advertiser)
-			
+
 			const projectId = await (
 				await this.prisma.progressProject.findUnique({
 					where: { id: progressProjectId }
 				})
 			).projectId
 			checkProjectOwnership(projectId, user.id)
-		} 
+		}
 		try {
-			const progressProject = await this.prisma.progressProject.findUnique({where: {
-				id: progressProjectId
-			}})
+			const progressProject = await this.prisma.progressProject.findUnique({
+				where: {
+					id: progressProjectId
+				}
+			})
 
-			const project = await (
-				await this.prisma.project.findUnique({
-					where: { id: progressProject.projectId }
-				})
-			)
+			const project = await await this.prisma.project.findUnique({
+				where: { id: progressProject.projectId }
+			})
 
-
-			if (user.id !== progressProject.userId || user.id !== project.authorId) 
-			{
-				throw new ForbiddenException('You can not perform this action: only verified users and owners of project can')
+			if (user.id !== progressProject.userId && user.id !== project.authorId) {
+				throw new ForbiddenException(
+					'You can not perform this action: only verified users and owners of project can'
+				)
 			}
 
 			const updatedProgressProject = await this.prisma.progressProject.update({
@@ -276,7 +279,7 @@ export class ProjectProgressService {
 			return updatedProgressProject
 		} catch (error) {
 			throw new InternalServerErrorException(
-				'Ошибка при обновлении статуса заявки'
+				`Ошибка при обновлении статуса заявки: ${error}`
 			)
 		}
 	}

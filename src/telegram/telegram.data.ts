@@ -14,12 +14,20 @@ export const contentData: {
 	againMessage: IContentSection
 } = {
 	first: {
-		caption: `
-Приветствую тебя, Создатель!
+		caption: ` 
+Welcome to Meme Factory! 🎉🎉🎉
 
-С нами ты можешь стать мощным инфлюенсером и продвигать бренды со всего мира!
+MemeFactory is a service where people post memes and earn money from it, and brands increase awareness through advertising integrations
+
+Here’s what you can do with Meme Factory now to laim Airdrop:
+🧑 Invite Friends: Bring your friends and family for more M2E! More friends = more chance for Airdrop
+🥊 Complete Tasks: Finish tasks to rack up more M2E!
+📣 Create Content: the moset valuable activity!
+
+Want 100% Airdrop chance? 
+⭐️ Verify now
         `,
-		buttonText: 'Я Готов!',
+		buttonText: "Let's GO!",
 		contentUrl: `https://api.meme-factory.site/uploads/default/3d2547be-a98a-401f-b7fe-3d2304725bb0_first-image.jpg`
 	},
 
@@ -83,6 +91,7 @@ Meme Factory - первая Meme-To-Earn платформа, где люди п�
 
 ⚡️ Скорее заходи в платформу, чтобы проверить новые задания!
         `,
+		contentUrl: "./assets/airdrop.jpg",
 		buttonText: 'Запустить Фабрику'
 	}
 }

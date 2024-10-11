@@ -1,59 +1,75 @@
 import {
 	Controller,
 	Get,
-	Post,
 	Param,
-	Body,
+	Post,
+	Put,
 	NotFoundException,
+	ForbiddenException,
+	InternalServerErrorException,
+	Req,
 	ParseIntPipe,
-	HttpCode,
-	HttpStatus,
-  Req,
-  Query
+	Query
 } from '@nestjs/common'
 import {
 	ApiTags,
 	ApiOperation,
 	ApiResponse,
 	ApiParam,
-	ApiBody,
 	ApiBearerAuth,
-  ApiQuery
+	ApiQuery
 } from '@nestjs/swagger'
 import { AutoTaskService } from './auto-task.service'
-import { AutoTask } from '@prisma/client'
-import { CreateAutoTaskDto, GetAutoTaskDto } from './dto/create-auto-task.dto'
-import { PublicRoute } from 'src/auth/decorators/public-route.decorator'
+import { AutoTask, AutoTaskApplication } from '@prisma/client'
 
+@ApiTags('auto-tasks')
 @ApiBearerAuth('access-token')
-@ApiTags('autotask-applications')
-@Controller('autotask-applications')
+@Controller('auto-tasks')
 export class AutoTaskController {
 	constructor(private readonly autoTaskService: AutoTaskService) {}
 
-	@Get()
-	@ApiOperation({ summary: 'Get all auto tasks' })
+	@ApiOperation({ summary: 'Получить все авто-задачи' })
 	@ApiResponse({
 		status: 200,
-		description: 'Return all auto tasks.',
-		type: [GetAutoTaskDto]
+		description: 'Список авто-задач получен успешно.'
 	})
-  @ApiQuery({ name: 'userId', required: false, type: Number, example: 1, description: 'Фильтр по user ID (опционально)' })
-  @PublicRoute()
-	async getAllAutoTasks(@Query('userId') userId?: string): Promise<AutoTask[]> {
-		return this.autoTaskService.getAllAutoTasks(Number(userId))
+	@Get()
+	async getAllAutoTasks(@Req() req: Request): Promise<AutoTask[]> {
+		const userId = req["user"].id
+		return await this.autoTaskService.getAllAutoTasks(userId)
 	}
 
-	@Get(':id')
-	@ApiOperation({ summary: 'Get auto task by ID' })
-	@ApiParam({ name: 'id', description: 'ID of the task' })
-	@ApiResponse({
-		status: 200,
-		description: 'Return the auto task.',
-		type: GetAutoTaskDto
+	@ApiOperation({
+		summary: 'Get all auto task applications with optional filters'
 	})
-	@ApiResponse({ status: 404, description: 'Task not found' })
-  @PublicRoute()
+	@ApiQuery({
+		name: 'userId',
+		required: false,
+		description: 'Filter by user ID',
+		example: 1
+	})
+	@ApiQuery({
+		name: 'taskId',
+		required: false,
+		description: 'Filter by task ID',
+		example: 1
+	})
+	@Get('applications')
+	async getAutoTaskApplications(
+		@Query('userId') userId?: number,
+		@Query('taskId') taskId?: number
+	): Promise<AutoTaskApplication[]> {
+		return await this.autoTaskService.getAutoTaskApplications(
+			Number(userId),
+			Number(taskId)
+		)
+	}
+
+	@ApiOperation({ summary: 'Получить авто-задачу по ID' })
+	@ApiParam({ name: 'id', description: 'ID авто-задачи' })
+	@ApiResponse({ status: 200, description: 'Задача найдена.' })
+	@ApiResponse({ status: 404, description: 'Задача не найдена.' })
+	@Get(':id')
 	async getAutoTaskById(
 		@Param('id', ParseIntPipe) id: number
 	): Promise<AutoTask | null> {
@@ -64,49 +80,59 @@ export class AutoTaskController {
 		return task
 	}
 
-	@Post()
-	@ApiOperation({ summary: 'Apply for a new auto task' })
-	@ApiBody({ type: CreateAutoTaskDto })
-	@ApiResponse({
-		status: 201,
-		description: 'Task created successfully.',
-		type: CreateAutoTaskDto
-	})
-	@HttpCode(HttpStatus.CREATED)
+	@ApiOperation({ summary: 'Подать заявку на выполнение авто-задачи' })
+	@ApiParam({ name: 'taskId', description: 'ID авто-задачи' })
+	@ApiResponse({ status: 201, description: 'Заявка подана успешно.' })
+	@ApiResponse({ status: 403, description: 'Заявка уже подана.' })
+	@ApiResponse({ status: 404, description: 'Задача не найдена.' })
+	@Post(':taskId/apply')
 	async applyForTask(
-		@Body() createAutoTaskDto: CreateAutoTaskDto,
-    @Req() req: Request
-	): Promise<AutoTask> {
-    const user = req["user"]
-		return this.autoTaskService.applyForTask(createAutoTaskDto, user)
+		@Param('taskId', ParseIntPipe) taskId: number,
+		@Req() req: Request
+	): Promise<AutoTaskApplication> {
+		try {
+			const user = req['user']
+			return await this.autoTaskService.applyForTask(taskId, user)
+		} catch (error) {
+			if (
+				error instanceof ForbiddenException ||
+				error instanceof NotFoundException
+			) {
+				throw error
+			}
+			throw new InternalServerErrorException(error.message)
+		}
 	}
 
-	@Post(':id/claim')
-	@ApiOperation({ summary: 'Claim the reward for a task' })
-	@ApiParam({ name: 'id', description: 'ID of the task' })
-	@ApiBody({
-		description: 'userId',
-		schema: {
-			type: 'object',
-			properties: {
-				userId: {
-					type: 'number',
-					example: '1'
-				}
-			}
-		}
+	@ApiOperation({
+		summary: 'Подтвердить выполнение задачи и получить вознаграждение'
 	})
+	@ApiParam({ name: 'taskId', description: 'ID авто-задачи' })
 	@ApiResponse({
 		status: 200,
-		description: 'Task confirmed and reward claimed.',
-		type: CreateAutoTaskDto
+		description: 'Задача подтверждена, вознаграждение начислено.'
 	})
-	@ApiResponse({ status: 403, description: 'You cannot claim the reward yet.' })
-	@ApiResponse({ status: 404, description: 'Task not found' })
+	@ApiResponse({
+		status: 403,
+		description: 'Задача уже подтверждена или рано для подтверждения.'
+	})
+	@ApiResponse({ status: 404, description: 'Заявка не найдена.' })
+	@Put(':taskId/claim')
 	async claimTask(
-		@Param('id', ParseIntPipe) id: number,
-		@Body('userId', ParseIntPipe) userId: number
-	): Promise<AutoTask> {
-		return this.autoTaskService.claimTask(id, userId)
+		@Param('taskId', ParseIntPipe) taskId: number,
+		@Req() req: Request
+	): Promise<AutoTaskApplication> {
+		try {
+			const user = req['user']
+			return await this.autoTaskService.claimTask(taskId, user.id)
+		} catch (error) {
+			if (
+				error instanceof ForbiddenException ||
+				error instanceof NotFoundException
+			) {
+				throw error
+			}
+			throw new InternalServerErrorException(error.message)
+		}
 	}
 }

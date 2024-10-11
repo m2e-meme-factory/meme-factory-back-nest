@@ -7,76 +7,58 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  creator
-  advertiser
-}
-
-enum ProjectStatus {
-  draft
-  moderation
-  published
-  not_accepted
-  closed
-}
-
 model User {
-  id                  Int                  @id @default(autoincrement())
-  telegramId          String               @unique
-  username            String?
-  isBaned             Boolean              @default(false)
-  isVerified          Boolean              @default(false)
-  createdAt           DateTime             @default(now())
-  inviterRefCode      String?
-  refCode             String
-  tasks               Task[]
-  undelitableMessages UndelitableMessage[]
-  userInfo            UserInfo?
-  projects            Project[]
-  role                UserRole             @default(creator)
-  events              Event[]
-  balance             Decimal              @default(0)
-  isSended            Boolean              @default(false)
-  wasOpened           Boolean              @default(false)
-
-  transactionsSent     Transaction[] @relation("FromUser")
-  transactionsReceived Transaction[] @relation("ToUser")
-
-  ProgressProject ProgressProject[]
-
-  MetaTag  MetaTag[]
-  AutoTask AutoTask[]
+  id                   Int                   @id @default(autoincrement())
+  telegramId           String                @unique
+  username             String?
+  isBaned              Boolean               @default(false)
+  isVerified           Boolean               @default(false)
+  createdAt            DateTime              @default(now())
+  inviterRefCode       String?
+  refCode              String
+  role                 UserRole              @default(creator)
+  balance              Decimal               @default(0)
+  isSended             Boolean               @default(false)
+  wasOpened            Boolean               @default(false)
+  AutoTaskApplication  AutoTaskApplication[]
+  events               Event[]
+  ProgressProject      ProgressProject[]
+  projects             Project[]
+  transactionsSent     Transaction[]         @relation("FromUser")
+  transactionsReceived Transaction[]         @relation("ToUser")
+  undelitableMessages  UndelitableMessage[]
+  userInfo             UserInfo?
+  MetaTag              MetaTag[]
+  tasks                Task[]                @relation("TaskToUser")
 
   @@map("users")
 }
 
 model UserInfo {
   id               Int     @id @default(autoincrement())
-  userId           Int     @unique
   name             String?
   phoneNumber      String?
   email            String?
   tonWalletAddress String?
+  userId           Int     @unique
   user             User    @relation(fields: [userId], references: [id])
 }
 
 model Project {
-  id          Int           @id @default(autoincrement())
-  authorId    Int
-  title       String
-  description String
-  bannerUrl   String?
-  files       Json?
-  tags        String[]
-  category    String
-  subtasks    Task[]
-  author      User          @relation(fields: [authorId], references: [id])
-  tasks       ProjectTask[]
-  status      ProjectStatus @default(draft)
-
-  events Event[]
-
+  id              Int               @id @default(autoincrement())
+  authorId        Int
+  title           String
+  description     String
+  bannerUrl       String?
+  files           Json?
+  tags            String[]
+  category        String
+  status          ProjectStatus     @default(draft)
+  events          Event[]
   ProgressProject ProgressProject[]
+  author          User              @relation(fields: [authorId], references: [id])
+  tasks           ProjectTask[]
+  subtasks        Task[]            @relation("ProjectToTask")
 }
 
 model Task {
@@ -85,24 +67,19 @@ model Task {
   description String
   price       Decimal
   projects    ProjectTask[]
-
-  User User[]
-
-  Project Project[]
+  Project     Project[]     @relation("ProjectToTask")
+  User        User[]        @relation("TaskToUser")
 }
 
 model AutoTask {
-  id           Int      @id @default(autoincrement())
-  title        String?
-  description  String?
-  reward       Decimal
-  url          String?
-  userId       Int
-  taskId       Int
-  user         User     @relation(fields: [userId], references: [id])
-  isConfirmed  Boolean  @default(false)
-  isIntegrated Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  id                  Int                   @id @default(autoincrement())
+  title               String?
+  description         String?
+  reward              Decimal
+  url                 String?
+  createdAt           DateTime              @default(now())
+  isIntegrated        Boolean               @default(false)
+  autoTaskApplication AutoTaskApplication[]
 }
 
 model ProjectTask {
@@ -130,16 +107,8 @@ model Transaction {
   amount     Decimal
   createdAt  DateTime        @default(now())
   type       TransactionType @default(PAYMENT)
-
-  fromUser User? @relation("FromUser", fields: [fromUserId], references: [id])
-  toUser   User  @relation("ToUser", fields: [toUserId], references: [id])
-}
-
-enum TransactionType {
-  PAYMENT // Оплата за проект
-  DEPOSIT // Пополнение баланса
-  WITHDRAWAL // Вывод средств
-  SYSTEM // Системные транзакции за ивенты
+  fromUser   User?           @relation("FromUser", fields: [fromUserId], references: [id])
+  toUser     User            @relation("ToUser", fields: [toUserId], references: [id])
 }
 
 model ProgressProject {
@@ -149,40 +118,88 @@ model ProgressProject {
   status    ProgressStatus @default(pending)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
-
-  user    User    @relation(fields: [userId], references: [id])
-  project Project @relation(fields: [projectId], references: [id])
-
-  events Event[]
+  events    Event[]
+  project   Project        @relation(fields: [projectId], references: [id])
+  user      User           @relation(fields: [userId], references: [id])
 
   @@unique([userId, projectId])
+}
+
+model Event {
+  id                Int              @id @default(autoincrement())
+  projectId         Int
+  userId            Int
+  role              UserRole
+  eventType         EventType
+  description       String?
+  createdAt         DateTime         @default(now())
+  details           Json?
+  progressProjectId Int?
+  message           String?
+  progressProject   ProgressProject? @relation(fields: [progressProjectId], references: [id])
+  Project           Project          @relation(fields: [projectId], references: [id])
+  User              User             @relation(fields: [userId], references: [id])
+
+  @@index([projectId])
+  @@index([userId])
+}
+
+model MetaTag {
+  id        Int      @id @default(autoincrement())
+  tag       String
+  userId    Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "userId_idx")
+  @@map("meta_tags")
+}
+
+model UserAdmin {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model AutoTaskApplication {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  taskId      Int
+  isConfirmed Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  task        AutoTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskId])
+}
+
+enum UserRole {
+  creator
+  advertiser
+}
+
+enum ProjectStatus {
+  draft
+  moderation
+  published
+  not_accepted
+  closed
+}
+
+enum TransactionType {
+  PAYMENT
+  DEPOSIT
+  WITHDRAWAL
+  SYSTEM
 }
 
 enum ProgressStatus {
   pending
   accepted
   rejected
-}
-
-model Event {
-  id                Int  @id @default(autoincrement())
-  projectId         Int
-  progressProjectId Int?
-
-  userId    Int
-  role      UserRole
-  eventType EventType
-
-  description     String?
-  createdAt       DateTime         @default(now())
-  details         Json? // Stores transactionId, message, amount, subtaskId
-  Project         Project          @relation(fields: [projectId], references: [id])
-  User            User             @relation(fields: [userId], references: [id])
-  progressProject ProgressProject? @relation(fields: [progressProjectId], references: [id])
-  message         String?
-
-  @@index([projectId])
-  @@index([userId])
 }
 
 enum EventType {
@@ -192,8 +209,6 @@ enum EventType {
   APPLICATION_SUBMITTED
   APPLICATION_APPROVED
   APPLICATION_REJECTED
-  TASK_SUBMIT
-  TASK_REJECTED
   TASK_COMPLETED
   TASK_UPDATED
   TRANSACTION_COMPLETED
@@ -201,15 +216,6 @@ enum EventType {
   DISPUTE_RESOLVED
   USER_MESSAGE
   RATING_GIVEN
-}
-
-model MetaTag {
-  id        Int      @id @default(autoincrement())
-  tag       String
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-
-  @@index([userId], name: "userId_idx")
-  @@map("meta_tags")
+  TASK_SUBMIT
+  TASK_REJECTED
 }
