@@ -34,8 +34,9 @@ export class AutoTaskController {
 		description: 'Список авто-задач получен успешно.'
 	})
 	@Get()
-	async getAllAutoTasks(): Promise<AutoTask[]> {
-		return await this.autoTaskService.getAllAutoTasks()
+	async getAllAutoTasks(@Req() req: Request): Promise<AutoTask[]> {
+		const userId = req["user"].id
+		return await this.autoTaskService.getAllAutoTasks(userId)
 	}
 
 	@ApiOperation({

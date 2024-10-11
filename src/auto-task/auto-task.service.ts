@@ -52,9 +52,13 @@ export class AutoTaskService {
 		}
 	}
 
-	async getAllAutoTasks(): Promise<AutoTask[]> {
+	async getAllAutoTasks(userId: number): Promise<AutoTask[]> {
 		return await this.prisma.autoTask.findMany({
-			include: { autoTaskApplication: true }
+			include: { autoTaskApplication: {
+				where: {
+					userId: userId
+				}
+			} }
 		})
 	}
 
