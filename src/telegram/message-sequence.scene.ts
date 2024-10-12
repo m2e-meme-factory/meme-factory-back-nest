@@ -63,25 +63,7 @@ export class MessageSequenceScene {
 		const contentUrl = "./assets/first-advertiser.jpg";
 		const file = this.fileIds[contentUrl] ? this.fileIds[contentUrl] : { source: contentUrl };
 
-		const inviteLink = `https://t.me/${"miniapped_v2_bot"}?start=${user.refCode}`
-
-		const verifyKeyboard = (isVerefied: boolean) => {
-			let keyboard = [
-				{
-					"text": "Invite Friends",
-					"switch_inline_query": `
-Join me on Meme Factory and let's earn together! 
-Use my invite link to join the fun.👑
-${inviteLink}
-`
-				},
-			]
-
-			if (!isVerefied)
-				keyboard.push(
-
-				)
-		}
+		const inviteLink = `https://t.me/${"mf_ton_bot"}?start=${user.refCode}`
 
 		const replyMarkup = {
 			inline_keyboard: [

@@ -157,7 +157,7 @@ export class UserService {
 		})
 		// TODO: get bot name from bot.telegram.me 
 		// like that: https://t.me/${this.bot.botInfo.username}?start=${user.refCode}
-		const refLink = `https://t.me/miniapped_bot?start=${user.refCode}`
+		const refLink = `https://t.me/mf_ton_bot?start=${user.refCode}`
 
 		return { count, refLink }
 	}
