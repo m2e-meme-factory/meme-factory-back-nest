@@ -7,6 +7,7 @@ import { InputFile } from 'telegraf/typings/core/types/typegram'
 import { SEQUENCE_SCENE_ID } from './message-sequence.scene'
 import { SceneContext, SceneSession } from 'telegraf/typings/scenes'
 import { PrismaService } from 'src/prisma/prisma.service'
+import { FIRSTTIME_SCENE_ID } from './firsttime.scene'
 
 const ORIGIN_URL = process.env.HOST_URL
 
@@ -39,7 +40,7 @@ export class TelegramUpdate {
 
 		try {
 			console.log(`Entering scene: ${SEQUENCE_SCENE_ID}`)
-			await ctx.scene.enter(SEQUENCE_SCENE_ID)
+			await ctx.scene.enter(FIRSTTIME_SCENE_ID)
 		} catch (error) {
 			console.error(`Failed to enter scene: ${error.message}`)
 		}

@@ -36,11 +36,11 @@ model User {
 
 model UserInfo {
   id               Int     @id @default(autoincrement())
-  userId           Int     @unique
   name             String?
   phoneNumber      String?
   email            String?
   tonWalletAddress String?
+  userId           Int     @unique
   user             User    @relation(fields: [userId], references: [id])
 }
 
@@ -77,8 +77,8 @@ model AutoTask {
   description         String?
   reward              Decimal
   url                 String?
-  isIntegrated        Boolean               @default(false)
   createdAt           DateTime              @default(now())
+  isIntegrated        Boolean               @default(false)
   autoTaskApplication AutoTaskApplication[]
 }
 
@@ -128,13 +128,13 @@ model ProgressProject {
 model Event {
   id                Int              @id @default(autoincrement())
   projectId         Int
-  progressProjectId Int?
   userId            Int
   role              UserRole
   eventType         EventType
   description       String?
   createdAt         DateTime         @default(now())
   details           Json?
+  progressProjectId Int?
   message           String?
   progressProject   ProgressProject? @relation(fields: [progressProjectId], references: [id])
   Project           Project          @relation(fields: [projectId], references: [id])
@@ -176,17 +176,6 @@ model AutoTaskApplication {
   @@unique([userId, taskId])
 }
 
-model AdminActionLog {
-  id         Int      @id @default(autoincrement())
-  action     String
-  entityType String
-  entityId   Int
-  oldData    Json?
-  newData    Json?
-  adminId    Int
-  createdAt  DateTime @default(now())
-}
-
 enum UserRole {
   creator
   advertiser
@@ -220,8 +209,6 @@ enum EventType {
   APPLICATION_SUBMITTED
   APPLICATION_APPROVED
   APPLICATION_REJECTED
-  TASK_SUBMIT
-  TASK_REJECTED
   TASK_COMPLETED
   TASK_UPDATED
   TRANSACTION_COMPLETED
@@ -229,4 +216,6 @@ enum EventType {
   DISPUTE_RESOLVED
   USER_MESSAGE
   RATING_GIVEN
+  TASK_SUBMIT
+  TASK_REJECTED
 }

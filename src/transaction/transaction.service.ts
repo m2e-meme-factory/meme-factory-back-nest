@@ -63,6 +63,9 @@ export class TransactionService {
 			include: {
 				toUser: true,
 				fromUser: true
+			},
+			orderBy: {
+				createdAt: "desc"
 			}
 		})
 	}

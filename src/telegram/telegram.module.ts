@@ -7,6 +7,7 @@ import { Agent } from 'https';
 import { session } from 'telegraf';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TransactionService } from 'src/transaction/transaction.service';
+import { FirstTimeScene } from './firsttime.scene';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { TransactionService } from 'src/transaction/transaction.service';
   providers: [
     TelegramUpdate,
     MessageSequenceScene,
+    FirstTimeScene,
     UserService,
     PrismaService,
     TransactionService,

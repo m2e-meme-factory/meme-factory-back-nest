@@ -51,7 +51,7 @@ export class AuthService {
 				if (inviter) {
 					await this.bot.telegram.sendMessage(
 						inviter.telegramId,
-						`Ваш реферальный код был использован! ${metaTag ? `\nМета тег: ${metaTag.tag}` : ''}`
+						`Somebody was invited by your refferal code ${metaTag ? `\nMeta tag:  ${metaTag.tag}` : ''}`
 					)
 
 					await this.transactionService.createTransaction({
