@@ -118,7 +118,7 @@ export class ProjectController {
 
 	@Get()
 	@ApiOperation({
-		summary: 'Получить все проекты с фильтрацией и пагинацией'
+		summary: 'Получить все проекты с фильтрацией, пагинацией и сортировкой'
 	})
 	@ApiQuery({
 		name: 'tags',
@@ -134,6 +134,18 @@ export class ProjectController {
 	})
 	@ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
 	@ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+	@ApiQuery({ 
+		name: 'sortBy', 
+		required: false, 
+		enum: ['price', 'id'], 
+		example: 'price' 
+	})
+	@ApiQuery({ 
+		name: 'sortOrder', 
+		required: false, 
+		enum: ['asc', 'desc'], 
+		example: 'desc' 
+	})
 	@ApiResponse({
 		status: 200,
 		description: 'Список проектов.',
@@ -141,32 +153,37 @@ export class ProjectController {
 			example: {
 				projects: [
 					{
-						id: 20,
-						authorId: 7,
-						title: 'example for tasks',
-						description: 'example',
-						bannerUrl: 'example',
-						files: [
-							'uploads/file1.png',
-							'uploads/file2.png',
-							'uploads/file3.png'
-						],
-						tags: ['priority'],
-						category: 'example category',
-						price: 100,
-						status: ProjectStatus.draft,
-						tasks: [
-							{
-								projectId: 20,
-								taskId: 19,
-								task: {
-									id: 19,
-									title: 'example title of task for validation',
-									description: 'example decription',
-									price: 10
+						project: {
+							id: 20,
+							authorId: 7,
+							title: 'example for tasks',
+							description: 'example',
+							bannerUrl: 'example',
+							files: [
+								'uploads/file1.png',
+								'uploads/file2.png',
+								'uploads/file3.png'
+							],
+							tags: ['priority'],
+							category: 'example category',
+							price: 100,
+							status: ProjectStatus.draft,
+							tasks: [
+								{
+									projectId: 20,
+									taskId: 19,
+									task: {
+										id: 19,
+										title: 'example title of task for validation',
+										description: 'example description',
+										price: 10
+									}
 								}
-							}
-						]
+							]
+						},
+						minPrice: 10,
+						maxPrice: 100,
+						totalPrice: 110
 					}
 				],
 				total: 1
@@ -178,7 +195,9 @@ export class ProjectController {
 		@Query('tags') tags?: string[],
 		@Query('category') category?: string,
 		@Query('page') page: string = '1',
-		@Query('limit') limit: string = '10'
+		@Query('limit') limit: string = '10',
+		@Query('sortBy') sortBy: 'price' | 'id' = 'id',
+		@Query('sortOrder') sortOrder: 'asc' | 'desc' = 'desc'
 	): Promise<{ projects: IProjectResponse[]; total: number }> {
 		const parsedPage = parseInt(page)
 		const parsedLimit = parseInt(limit)
@@ -188,7 +207,9 @@ export class ProjectController {
 			tagsArray,
 			category,
 			parsedPage,
-			parsedLimit
+			parsedLimit,
+			sortBy,
+			sortOrder
 		)
 	}
 

@@ -8,12 +8,13 @@ import { Prisma, Project, ProjectStatus, User, UserRole } from '@prisma/client'
 import { CreateProjectDto, UpdateProjectDto } from '../dto/project.dto'
 import { TelegramUpdate } from 'src/telegram/telegram.update'
 // import { EventService } from 'src/event/event.service'
-import { IDetails, IProjectResponse } from '../types/project.types'
+import { IAllProjectsResponse, IDetails, IProjectResponse } from '../types/project.types'
 import {
 	checkProjectOwnership,
 	checkUserRole,
 	countProjectPrice
 } from '../project.utils'
+import { Decimal } from '@prisma/client/runtime/library'
 
 @Injectable()
 export class ProjectService {
@@ -106,7 +107,9 @@ export class ProjectService {
 		tags?: string[],
 		category?: string,
 		page: number = 1,
-		limit: number = 10
+		limit: number = 10,
+		sortBy: 'price' | 'id' = 'id',
+		sortOrder: 'asc' | 'desc' = 'desc'
 	): Promise<{ projects: IProjectResponse[]; total: number }> {
 		try {
 			const whereClause: Prisma.ProjectWhereInput = {}
@@ -143,22 +146,38 @@ export class ProjectService {
 				},
 				skip,
 				take,
-				orderBy: {
-					id: 'desc'
-				}
 			})
 
-			const transformedProjects: IProjectResponse[] = projects.map(project => {
+			const transformedProjects: IAllProjectsResponse[] = projects.map(project => {
 				const { minPrice, maxPrice } = countProjectPrice(
 					project.tasks.map(task => task.task)
 				)
+				const totalPrice = new Decimal(project.tasks.reduce(
+					(sum, task) => sum + task.task.price.toNumber(), 
+					0
+				))
 
 				return {
 					project,
 					minPrice,
-					maxPrice
+					maxPrice,
+					totalPrice
 				}
 			})
+
+			if (sortBy === 'price') {
+				transformedProjects.sort((a, b) => {
+					return sortOrder === 'asc' 
+						? a.totalPrice.comparedTo(b.totalPrice)
+						: b.totalPrice.comparedTo(a.totalPrice);
+				});
+			} else {
+				transformedProjects.sort((a, b) => {
+					return sortOrder === 'asc' 
+						? a.project.id - b.project.id 
+						: b.project.id - a.project.id;
+				});
+			}
 
 			return {
 				projects: transformedProjects,

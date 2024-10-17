@@ -1,24 +1,27 @@
-import { EventType, Project } from "@prisma/client";
-import { Decimal } from "@prisma/client/runtime/library";
+import { EventType, Project } from '@prisma/client'
+import { Decimal } from '@prisma/client/runtime/library'
 
 export interface IEvent {
-    id: number;
-    progressProjectId: number
-    userId: number;
-    eventType: EventType;
-    message?: string;
-    createdAt: Date;
-    details?: IDetails;
+	id: number
+	progressProjectId: number
+	userId: number
+	eventType: EventType
+	message?: string
+	createdAt: Date
+	details?: IDetails
 }
 
 export interface IDetails {
-    taskId?: number
-    transactionId?: number
-    amount?: number
+	taskId?: number
+	transactionId?: number
+	amount?: number
 }
 
 export interface IProjectResponse {
-    project: Project
-    minPrice: Decimal
-    maxPrice: Decimal
+	project: Project
+	minPrice: Decimal
+	maxPrice: Decimal
+}
+export interface IAllProjectsResponse extends IProjectResponse {
+	totalPrice: Decimal
 }
