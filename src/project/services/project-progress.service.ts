@@ -250,7 +250,10 @@ export class ProjectProgressService {
 
 			const updatedProgressProject = await this.prisma.progressProject.update({
 				where: { id: progressProjectId },
-				data: { status: status }
+				data: { status: status },
+				include: {
+					project: true
+				}
 			})
 
 			let eventType: EventType

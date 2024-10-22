@@ -82,7 +82,7 @@ export class TaskProgressService {
 				progressProjectId: existingProgress.id,
 				details: {
 					taskId: taskId
-				}
+				},
 			})
 
 			return event

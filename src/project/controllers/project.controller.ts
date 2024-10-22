@@ -33,7 +33,8 @@ import { ProjectProgressService } from '../services/project-progress.service'
 import { TaskProgressService } from '../services/task-progress.service'
 import { Decimal } from '@prisma/client/runtime/library'
 import { IProjectResponse } from '../types/project.types'
-
+import { NotificationService } from 'src/notification/notification.service'
+import { UserService } from 'src/user/user.service'
 @ApiTags('projects')
 @ApiBearerAuth('access-token')
 @Controller('projects')
@@ -41,7 +42,9 @@ export class ProjectController {
 	constructor(
 		private readonly projectService: ProjectService,
 		private readonly projectProgressService: ProjectProgressService,
-		private readonly taskProgressService: TaskProgressService
+		private readonly taskProgressService: TaskProgressService,
+		private readonly notificationService: NotificationService,
+		private readonly userService: UserService
 	) {}
 
 	@Post()
@@ -71,7 +74,14 @@ export class ProjectController {
 		@Req() req: Request
 	): Promise<Project> {
 		const user: User = req['user']
-		return this.projectService.createProject(createProjectDto, user)
+		const project = await this.projectService.createProject(createProjectDto, user)
+
+		await this.notificationService.create({
+			userId: user.telegramId,
+			message: `Ваш проект "${project.title}" успешно создан.`
+		})
+
+		return project
 	}
 
 	@Get(':id')
@@ -134,17 +144,17 @@ export class ProjectController {
 	})
 	@ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
 	@ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-	@ApiQuery({ 
-		name: 'sortBy', 
-		required: false, 
-		enum: ['price', 'id'], 
-		example: 'price' 
+	@ApiQuery({
+		name: 'sortBy',
+		required: false,
+		enum: ['price', 'id'],
+		example: 'price'
 	})
-	@ApiQuery({ 
-		name: 'sortOrder', 
-		required: false, 
-		enum: ['asc', 'desc'], 
-		example: 'desc' 
+	@ApiQuery({
+		name: 'sortOrder',
+		required: false,
+		enum: ['asc', 'desc'],
+		example: 'desc'
 	})
 	@ApiResponse({
 		status: 200,
@@ -283,24 +293,24 @@ export class ProjectController {
 	@ApiResponse({ status: 404, description: 'Project or files not found.' })
 	@ApiResponse({ status: 500, description: 'Internal server error.' })
 	@PublicRoute()
-		async sendFilesToTelegram(
-			@Param('id') projectId: string,
-			@Param('tg_id') telegramId: string
-		) {
-			try {
-				const parsedProjectId = parseInt(projectId)
-				await this.projectService.sendProjectFilesToTelegram(
-					parsedProjectId,
-					telegramId
-				)
-				return { message: 'Файлы отправлены в Telegram' }
-			} catch (error) {
-				throw new InternalServerErrorException(
-					`Ошибка при отправке файлов в Telegram: ${error}`,
-					error.message
-				)
-			}
+	async sendFilesToTelegram(
+		@Param('id') projectId: string,
+		@Param('tg_id') telegramId: string
+	) {
+		try {
+			const parsedProjectId = parseInt(projectId)
+			await this.projectService.sendProjectFilesToTelegram(
+				parsedProjectId,
+				telegramId
+			)
+			return { message: 'Файлы отправлены в Telegram' }
+		} catch (error) {
+			throw new InternalServerErrorException(
+				`Ошибка при отправке файлов в Telegram: ${error}`,
+				error.message
+			)
 		}
+	}
 
 	@ApiOperation({ summary: 'Подать заявку на участие в проекте' })
 	@ApiParam({ name: 'id', type: 'string', description: 'ID проекта' })
@@ -326,38 +336,47 @@ export class ProjectController {
 		@Body('message') message: string = ''
 	) {
 		const user = req['user']
-		return this.projectProgressService.applyToProject(
+		const result = await this.projectProgressService.applyToProject(
 			user,
 			Number(projectId),
 			message
 		)
+		const project = await this.projectService.getProjectById(Number(projectId))
+		const author = await this.userService.getUserById(project.project.authorId)
+		await this.notificationService.create({
+			userId: author.telegramId,
+			message: `Новая заявка на участие в проекте "${project.project.title}" от пользователя ${user.username || user.id}.`
+		})
+
+		return result
 	}
 
 	@Get(':projectId/cost')
 	@ApiOperation({ summary: 'Получить общие затраты на проект' })
 	@ApiParam({ name: 'projectId', type: Number, description: 'ID проекта' })
 	@ApiResponse({
-	  status: 200,
-	  description: 'Общие затраты на проект успешно получены.',
-	  schema: {
-		example: 15000
-	  }
+		status: 200,
+		description: 'Общие затраты на проект успешно получены.',
+		schema: {
+			example: 15000
+		}
 	})
 	@ApiResponse({
-	  status: 404,
-	  description: 'Проект не найден.'
+		status: 404,
+		description: 'Проект не найден.'
 	})
 	@ApiResponse({
-	  status: 500,
-	  description: 'Ошибка при вычислении затрат на проект.'
+		status: 500,
+		description: 'Ошибка при вычислении затрат на проект.'
 	})
-	async calculateTotalProjectCost(@Req() req: Request, @Param('projectId', IdValidationPipe) projectId: number): Promise<number> {
-		const user = req["user"]
-		return await this.projectService.calculateTotalProjectCost(user,projectId);
-
+	async calculateTotalProjectCost(
+		@Req() req: Request,
+		@Param('projectId', IdValidationPipe) projectId: number
+	): Promise<number> {
+		const user = req['user']
+		return await this.projectService.calculateTotalProjectCost(user, projectId)
 	}
 
-	
 	@Put(':id')
 	@ApiOperation({ summary: 'Обновить проект' })
 	@ApiParam({ name: 'id', description: 'ID проекта' })
@@ -397,10 +416,17 @@ export class ProjectController {
 		@Param('id') id: string,
 		@Body() updateProjectDto: UpdateProjectDto,
 		@Req() req: Request
-	): Promise<{project: Project, minPrice: Decimal, maxPrice: Decimal}> {
+	): Promise<{ project: Project; minPrice: Decimal; maxPrice: Decimal }> {
 		const projectId = parseInt(id)
 		const user: User = req['user']
-		return this.projectService.updateProject(projectId, updateProjectDto, user)
+		const result = await this.projectService.updateProject(projectId, updateProjectDto, user)
+
+		await this.notificationService.create({
+			userId: user.telegramId,
+			message: `Ваш проект "${result.project.title}" был успешно обновлен.`
+		})
+
+		return result
 	}
 
 	@Get(':projectId/freelancers')
@@ -494,10 +520,17 @@ export class ProjectController {
 	): Promise<IProjectResponse> {
 		const projectId = parseInt(id)
 		const user: User = req['user']
-		return this.projectService.updateProjectStatus(
+		const result = await this.projectService.updateProjectStatus(
 			projectId,
 			updateProjectStatusDto.status,
 			user
 		)
+
+		await this.notificationService.create({
+			userId: user.telegramId,
+			message: `Статус вашего проекта "${result.project.title}" изменен на ${updateProjectStatusDto.status}.`
+		})
+
+		return result
 	}
 }
