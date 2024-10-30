@@ -11,13 +11,16 @@ import {
 import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
 import { ProjectProgressService } from '../services/project-progress.service'
 import { ProgressStatus } from '@prisma/client'
-
+import { NotificationService } from 'src/notification/notification.service'
+import { UserService } from 'src/user/user.service'
 @ApiTags('project-progress')
 @ApiBearerAuth('access-token')
 @Controller('projects')
 export class ProjectProgressController {
 	constructor(
-		private readonly projectProgressService: ProjectProgressService
+		private readonly projectProgressService: ProjectProgressService,
+		private readonly notificationService: NotificationService,
+		private readonly userService: UserService
 	) {}
 
 	@ApiOperation({ summary: 'Получить прогресс проекта по ID проекта' })
@@ -206,12 +209,22 @@ export class ProjectProgressController {
 		@Body('message') message?: string
 	) {
 		const user = req['user']
-		return this.projectProgressService.updateProjectProgressStatus(
-			user,
-			Number(id),
-			ProgressStatus.accepted,
-			message
-		)
+		const result =
+			await this.projectProgressService.updateProjectProgressStatus(
+				user,
+				Number(id),
+				ProgressStatus.accepted,
+				message
+			)
+
+		const userInfo = await this.userService.getUserById(result.userId)
+
+		await this.notificationService.create({
+			userId: userInfo.telegramId,
+			message: `Ваша заявка на участие в проекте "${result.project.title}" была принята.`
+		})
+
+		return result
 	}
 
 	@ApiOperation({ summary: 'Отклонить заявку на участие в проекте' })
@@ -250,16 +263,25 @@ export class ProjectProgressController {
 		@Body('message') message?: string
 	) {
 		const user = req['user']
-		return this.projectProgressService.updateProjectProgressStatus(
-			user,
-			Number(id),
-			ProgressStatus.rejected,
-			message
-		)
+		const result =
+			await this.projectProgressService.updateProjectProgressStatus(
+				user,
+				Number(id),
+				ProgressStatus.rejected,
+				message
+			)
+		const userInfo = await this.userService.getUserById(result.userId)
+
+		await this.notificationService.create({
+			userId: userInfo.telegramId,
+			message: `Ваша заявка на участие в проекте "${result.project.title}" была отклонена.`
+		})
+
+		return result
 	}
 
 	@Get('progress/by-creator/:creatorId')
-	@ApiOperation({ summary: 'Получить все проекты по ID создателя' })
+	@ApiOperation({ summary: 'Полуить все проекты по ID создателя' })
 	@ApiParam({
 		name: 'creatorId',
 		type: 'number',

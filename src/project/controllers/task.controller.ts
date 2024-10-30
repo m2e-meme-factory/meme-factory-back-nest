@@ -10,12 +10,19 @@ import {
 import { TaskProgressService } from '../services/task-progress.service'
 import { IdValidationPipe } from 'src/pipes/id.validation.pipe'
 import { RejectTaskCompletionDto } from '../dto/project.dto'
-
+import { NotificationService } from 'src/notification/notification.service'
+import { ProjectService } from '../services/project.service'
+import { UserService } from 'src/user/user.service'
 @ApiTags('tasks')
 @ApiBearerAuth('access-token')
 @Controller('tasks')
 export class TaskController {
-	constructor(private readonly taskProgressService: TaskProgressService) {}
+	constructor(
+		private readonly taskProgressService: TaskProgressService,
+		private readonly notificationService: NotificationService,
+		private readonly userService: UserService,
+		private readonly projectService: ProjectService
+	) {}
 
 	@Post(':taskId/apply-completion')
 	@ApiOperation({
@@ -72,7 +79,21 @@ export class TaskController {
 		@Body('message') message?: string
 	) {
 		const user = req['user']
-		return this.taskProgressService.applyToCompleteTask(user, taskId, message)
+		const result = await this.taskProgressService.applyToCompleteTask(
+			user,
+			taskId,
+			message
+		)
+		const project = await this.projectService.getProjectById(result.projectId)
+		const author = await this.userService.getUserById(project.project.authorId)
+
+		// Уведомление для рекламодателя
+		await this.notificationService.create({
+			userId: author.telegramId,
+			message: `Исполнитель ${user.username || user.id} подал заявку на завершение задачи в проекте "${project.project.title}".`
+		})
+
+		return result
 	}
 
 	@Post(':taskId/approve-completion')
@@ -148,16 +169,28 @@ export class TaskController {
 		@Req() req: Request,
 		@Body('creatorId') creatorId: number,
 		@Body('eventId') eventId: number,
-		@Body('message') message?: string,
+		@Body('message') message?: string
 	) {
 		const user = req['user']
-		return this.taskProgressService.approveTaskCompletion(
+		const result = await this.taskProgressService.approveTaskCompletion(
 			user,
 			taskId,
 			creatorId,
 			eventId,
 			message
 		)
+		const project = await this.projectService.getProjectById(
+			result.event.projectId
+		)
+		const creator = await this.userService.getUserById(creatorId)
+
+		// Уведомление для исполнителя
+		await this.notificationService.create({
+			userId: creator.telegramId,
+			message: `Ваша задача в проекте "${project.project.title}" была одобрена. Средства переведены на ваш баланс.`
+		})
+
+		return result
 	}
 
 	@Post(':taskId/reject-completion')
@@ -203,12 +236,24 @@ export class TaskController {
 		const user = req['user']
 		const { creatorId, message, eventId } = body
 
-		return await this.taskProgressService.rejectTaskCompletion(
+		const result = await this.taskProgressService.rejectTaskCompletion(
 			user,
 			taskId,
 			creatorId,
 			eventId,
 			message
 		)
+		const project = await this.projectService.getProjectById(
+			result.event.projectId
+		)
+		const creator = await this.userService.getUserById(creatorId)
+
+		// Уведомление для исполнителя
+		await this.notificationService.create({
+			userId: creator.telegramId,
+			message: `Ваша задача в проекте "${project.project.title}" была отклонена. Причина: ${message || 'Не указана'}`
+		})
+
+		return result
 	}
 }
