@@ -40,7 +40,7 @@ private fileIds: { [url: string]: string; } = {};
 			const replyMarkup = {
 				inline_keyboard: [
 					[
-						Markup.button.webApp("Launch", process.env.APP_URL + "/projects")
+						Markup.button.webApp("Launch", process.env.APP_URL + "/profile")
 					],
 					[
 						{
@@ -51,7 +51,7 @@ Use my invite link to join the fun.👑
 ${inviteLink}
 `
 						},
-						Markup.button.webApp("⭐️ Verify", process.env.APP_URL + "/profile")
+						// Markup.button.webApp("⭐️ Verify", process.env.APP_URL + "/profile")
 					],
 					[
 						Markup.button.url("Join Community", "https://t.me/m2e_pro")
@@ -67,9 +67,8 @@ Welcome to Meme Factory!
 - Follow us in socials
 🎉 Claim Airdrop!
 
-Want 100% Airdrop whitelist? 
-⭐️ Verify now
-			`
+⭐️ Begin earning with meme factory now!
+`
 
 			let message;
 			if (contentUrl.endsWith('.mp4')) {
@@ -138,7 +137,7 @@ You earn M2E points for claiming Airdrop with different activities:
         const replyMarkup = {
             inline_keyboard: [
                 [
-                    Markup.button.webApp("Launch", process.env.APP_URL + "/projects")
+                    Markup.button.webApp("Launch", process.env.APP_URL + "/profile")
                 ],
                 [
                     {
@@ -149,7 +148,7 @@ Use my invite link to join the fun.👑
 ${inviteLink}
 `
                     },
-                    Markup.button.webApp("⭐️ Verify", process.env.APP_URL + "/profile")
+                    // Markup.button.webApp("⭐️ Verify", process.env.APP_URL + "/profile")
                 ],
                 [
                     Markup.button.url("Join Community", "https://t.me/m2e_pro")
@@ -164,8 +163,7 @@ You’ll be able to complete tasks and start earning in TON!
 
 🤑 Now is the perfect time to become part of the project and level up your earning potential as the platform grows! 🌟
 
-Want 100% Airdrop whitelist? 
-⭐️ Verify now
+⭐️ Begin earning with meme factory now!
 `
     await ctx.replyWithHTML(message, {
         reply_markup: replyMarkup

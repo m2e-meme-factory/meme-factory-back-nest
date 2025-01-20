@@ -221,7 +221,12 @@ export class ProjectProgressController {
 
 		await this.notificationService.create({
 			userId: userInfo.telegramId,
-			message: `Ваша заявка на участие в проекте "${result.project.title}" была принята.`
+			message: `
+🎉 Congratulations 🎉
+You were approved for "${result.project.title}" 
+
+Launch App to complete tasks and get M2E now 🔽
+`
 		})
 
 		return result
@@ -274,7 +279,13 @@ export class ProjectProgressController {
 
 		await this.notificationService.create({
 			userId: userInfo.telegramId,
-			message: `Ваша заявка на участие в проекте "${result.project.title}" была отклонена.`
+			message: `
+😢 You were rejected for quest: "${result.project.title}"
+
+You can try again after 24 hours.
+
+See more details in App 🔽
+`
 		})
 
 		return result

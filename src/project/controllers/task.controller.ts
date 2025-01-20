@@ -90,7 +90,7 @@ export class TaskController {
 		// Уведомление для рекламодателя
 		await this.notificationService.create({
 			userId: author.telegramId,
-			message: `Исполнитель ${user.username || user.id} подал заявку на завершение задачи в проекте "${project.project.title}".`
+			message: `Creator ${user.username ? `@${user.username}` : user.id} completed task: "${project.project.title}".`
 		})
 
 		return result
@@ -187,7 +187,12 @@ export class TaskController {
 		// Уведомление для исполнителя
 		await this.notificationService.create({
 			userId: creator.telegramId,
-			message: `Ваша задача в проекте "${project.project.title}" была одобрена. Средства переведены на ваш баланс.`
+			message: `
+🎉 Congratulations 🎉
+💸 You earned some M2E in "${project.project.title}" 
+
+View updated balance in App 🔽
+`
 		})
 
 		return result
@@ -251,7 +256,12 @@ export class TaskController {
 		// Уведомление для исполнителя
 		await this.notificationService.create({
 			userId: creator.telegramId,
-			message: `Ваша задача в проекте "${project.project.title}" была отклонена. Причина: ${message || 'Не указана'}`
+			message: `
+Task was rejected 😢
+In project: "${project.project.title}" 
+
+See more details in App 🔽
+`
 		})
 
 		return result

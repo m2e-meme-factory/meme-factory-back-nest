@@ -291,7 +291,6 @@ export class UserController {
 			},
 			properties: {
 				id: { type: 'number' },
-				telegramId: { type: 'string' },
 				username: { type: 'string' },
 				role: { type: UserRole.creator },
 				balance: { type: 'number' },
@@ -311,6 +310,16 @@ export class UserController {
 			throw new BadRequestException(error.message)
 		}
 	}
+
+	@Get('/metatags')
+	async getUserMetaTags() {
+                try {
+                        return await this.userService.getMetatags()
+                } catch (error) {
+                        throw new BadRequestException(error.message)
+                }
+        }
+
 
 	@Get('/by-telegram/:telegramId')
 	@HttpCode(HttpStatus.OK)

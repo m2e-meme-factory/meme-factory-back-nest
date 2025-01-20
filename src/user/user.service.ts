@@ -43,6 +43,13 @@ export class UserService {
 	// 	return user
 	// }
 
+
+	async getMetatags(){
+		let metatags = await this.prisma.metaTag.findMany()
+
+		return metatags
+	}
+
 	// real func
 	async findOrCreateUser(
 		telegramId: number,

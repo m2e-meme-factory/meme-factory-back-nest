@@ -3,7 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { NotificationService } from './notification.service';
 import { NotificationStatus } from '@prisma/client';
 import { InjectBot } from 'nestjs-telegraf';
-import { Telegraf } from 'telegraf';
+import { Markup, Telegraf } from 'telegraf';
 
 @Injectable()
 export class NotificationQueue {
@@ -11,6 +11,8 @@ export class NotificationQueue {
     private readonly notificationService: NotificationService,
     @InjectBot() private readonly bot: Telegraf
   ) {}
+
+  errored_ids: string[] = []
 
   @Cron(CronExpression.EVERY_MINUTE)
   async processNotifications() {
@@ -21,9 +23,19 @@ export class NotificationQueue {
 
     for (const notification of notificationsToSend) {
       try {
-        await this.bot.telegram.sendMessage(notification.userId, notification.message);
-        await this.notificationService.updateStatus(notification.id, NotificationStatus.SENT);
+        if (this.errored_ids.includes(notification.userId)) {
+          await this.notificationService.updateStatus(notification.id, NotificationStatus.SENT);
+        }
+        else {
+          await this.bot.telegram.sendMessage(notification.userId, notification.message, {
+            reply_markup: Markup.inlineKeyboard([
+                Markup.button.webApp("Lanuch now", process.env.APP_URL + "/profile")
+              ]).reply_markup
+          });
+          await this.notificationService.updateStatus(notification.id, NotificationStatus.SENT);
+        }
       } catch (error) {
+        this.errored_ids.push(notification.userId);
         if (error.message.includes('bot was blocked by the user')) {
           await this.notificationService.updateStatus(notification.id, NotificationStatus.ERRORED);
         } else {
@@ -35,7 +47,8 @@ export class NotificationQueue {
 
   @Cron('0 12 */2 * *')
   async sendCreatorReminders() {
-    const reminderMessage = 'Не забудьте выполнить ваши задачи в проектах!';
+    const reminderMessage = `
+⭐ Do not forget to complete daily tasks!`;
     await this.notificationService.createReminderForAllCreators(reminderMessage);
   }
 }

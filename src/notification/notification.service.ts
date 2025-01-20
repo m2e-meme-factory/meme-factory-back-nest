@@ -46,11 +46,13 @@ export class NotificationService {
       where: { role: 'creator' }
     });
 
-    for (const creator of creators) {
-      await this.create({
-        userId: creator.telegramId,
-        message: message
-      });
+    const reminders = creators.map(creator => {
+      return {        
+          userId: creator.telegramId,
+          message: message
+      }
     }
+    )
+    const created = await this.prisma.notification.createMany({data: reminders})
   }
 }

@@ -78,7 +78,7 @@ export class ProjectController {
 
 		await this.notificationService.create({
 			userId: user.telegramId,
-			message: `Ваш проект "${project.title}" успешно создан.`
+			message: `Quest "${project.title}" successfully created.`
 		})
 
 		return project
@@ -345,7 +345,7 @@ export class ProjectController {
 		const author = await this.userService.getUserById(project.project.authorId)
 		await this.notificationService.create({
 			userId: author.telegramId,
-			message: `Новая заявка на участие в проекте "${project.project.title}" от пользователя ${user.username || user.id}.`
+			message: `New join request in "${project.project.title}" from user: ${user.username ? `@${user.username}` : user.id}.`
 		})
 
 		return result
@@ -423,7 +423,7 @@ export class ProjectController {
 
 		await this.notificationService.create({
 			userId: user.telegramId,
-			message: `Ваш проект "${result.project.title}" был успешно обновлен.`
+			message: `Quest "${result.project.title}" successfully updated.`
 		})
 
 		return result
@@ -528,7 +528,7 @@ export class ProjectController {
 
 		await this.notificationService.create({
 			userId: user.telegramId,
-			message: `Статус вашего проекта "${result.project.title}" изменен на ${updateProjectStatusDto.status}.`
+			message: `Quest status "${result.project.title}" was updated to: ${updateProjectStatusDto.status}.`
 		})
 
 		return result
