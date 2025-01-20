@@ -13,6 +13,7 @@ import {
 import { CreateTransactionDto } from 'src/transaction/dto/transaction.dto'
 import { TransactionService } from 'src/transaction/transaction.service'
 import { PrismaService } from 'src/prisma/prisma.service'
+import { Decimal } from '@prisma/client/runtime/library'
 
 @Injectable()
 export class AutoTaskService {
@@ -146,5 +147,13 @@ export class AutoTaskService {
 		})
 
 		return updatedApplication
+	}
+
+	async newTransaction(amount: Decimal, userId: number) {
+		await this.transactionService.createTransaction({ type: "SYSTEM", toUserId: userId, amount: amount })
+	
+		return {
+			isConfirmed: true
+		}
 	}
 }
