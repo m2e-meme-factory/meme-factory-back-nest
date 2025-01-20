@@ -8,6 +8,7 @@ import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 export class TonController {
 	constructor(private readonly tonService: TonService) {}
 
+	// TODO: Получение кошелька, чтобы на разных устрйоствах тоже работало
 	@Post('connect')
 	@ApiOperation({ summary: 'Connect TON Wallet Address to User Account' })
 	@ApiResponse({
