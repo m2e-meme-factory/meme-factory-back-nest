@@ -109,6 +109,9 @@ export class AutoTaskService {
 				await this.verifyDailyCheck(application)
 				break
 			case VerificationMethod.WALLET_VERIFICATION:
+				if (application?.isConfirmed) {
+					throw new ForbiddenException('Wallet connection reward already claimed.')
+				}
 				await this.verifyWalletConnection(userId)
 				break
 			case VerificationMethod.WELCOME:
@@ -148,6 +151,20 @@ export class AutoTaskService {
 
 		if (!userInfo.tonWalletAddress) {
 			throw new ForbiddenException('TON wallet not connected.')
+		}
+
+		const existingWalletTask = await this.prisma.autoTaskApplication.findFirst({
+			where: {
+				userId,
+				task: {
+					taskType: AutoTaskType.WALLET_CONNECT
+				},
+				isConfirmed: true
+			}
+		})
+
+		if (existingWalletTask) {
+			throw new ForbiddenException('Wallet connection reward already claimed.')
 		}
 	}
 
@@ -197,7 +214,6 @@ export class AutoTaskService {
 					lastComplete.getFullYear() === now.getFullYear()
 				)
 			case AutoTaskType.WELCOME_BONUS:
-				return !application.isConfirmed
 			case AutoTaskType.WALLET_CONNECT:
 				return !application.isConfirmed
 			default:
