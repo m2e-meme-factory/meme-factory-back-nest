@@ -78,7 +78,8 @@ model AutoTask {
   description         String?
   reward              Decimal
   url                 String?
-  isIntegrated        Boolean               @default(false)
+  taskType            AutoTaskType          @default(CUSTOM)
+  verificationMethod  VerificationMethod    @default(NONE)
   createdAt           DateTime              @default(now())
   autoTaskApplication AutoTaskApplication[]
 }
@@ -166,13 +167,14 @@ model UserAdmin {
 }
 
 model AutoTaskApplication {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  taskId      Int
-  isConfirmed Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  task        AutoTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  taskId          Int
+  isConfirmed     Boolean   @default(false)
+  lastCompletedAt DateTime?
+  createdAt       DateTime  @default(now())
+  task            AutoTask  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, taskId])
 }
@@ -247,4 +249,18 @@ enum NotificationStatus {
   PENDING
   SENT
   ERRORED
+}
+
+enum AutoTaskType {
+  DAILY_CHECK
+  WELCOME_BONUS
+  WALLET_CONNECT
+  CUSTOM
+}
+
+enum VerificationMethod {
+  NONE
+  DAILY_CHECK
+  WALLET_VERIFICATION
+  WELCOME
 }
