@@ -19,6 +19,7 @@ import {
 import { AutoTaskService } from './auto-task.service'
 import { AutoTask, AutoTaskApplication } from '@prisma/client'
 import { TaskStatusResponse } from './dto/task-status.dto'
+import { GetAutoTaskDto } from './dto/create-auto-task.dto'
 
 @ApiTags('auto-tasks')
 @ApiBearerAuth('access-token')
@@ -101,6 +102,35 @@ export class AutoTaskController {
 				throw error
 			}
 			throw new InternalServerErrorException(error.message)
+		}
+	}
+
+	@ApiOperation({ summary: 'Получить авто-задачи по категории' })
+	@ApiParam({ 
+		name: 'category', 
+		description: 'Название категории задач',
+		example: 'Daily Tasks'
+	})
+	@ApiResponse({ 
+		status: 200, 
+		description: 'Задачи найдены.',
+		type: [GetAutoTaskDto]
+	})
+	@ApiResponse({ 
+		status: 404, 
+		description: 'Задачи для указанной категории не найдены.' 
+	})
+	@Get('category/:category')
+	async getAutoTasksByCategory(
+		@Param('category') category: string
+	): Promise<AutoTask[]> {
+		try {
+			return await this.autoTaskService.getAutoTasksByCategory(category);
+		} catch (error) {
+			if (error instanceof NotFoundException) {
+				throw error;
+			}
+			throw new InternalServerErrorException(error.message);
 		}
 	}
 }

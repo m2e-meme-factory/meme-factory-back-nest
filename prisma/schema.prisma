@@ -22,6 +22,7 @@ model User {
   wasOpened            Boolean               @default(false)
   AutoTaskApplication  AutoTaskApplication[]
   events               Event[]
+  Notification         Notification[]
   ProgressProject      ProgressProject[]
   projects             Project[]
   transactionsSent     Transaction[]         @relation("FromUser")
@@ -32,7 +33,6 @@ model User {
   tasks                Task[]                @relation("TaskToUser")
 
   @@map("users")
-  Notification Notification[]
 }
 
 model UserInfo {
@@ -78,9 +78,11 @@ model AutoTask {
   description         String?
   reward              Decimal
   url                 String?
+  createdAt           DateTime              @default(now())
   taskType            AutoTaskType          @default(CUSTOM)
   verificationMethod  VerificationMethod    @default(NONE)
-  createdAt           DateTime              @default(now())
+  categoryId          Int?
+  AutoTaskCategory    AutoTaskCategory?     @relation(fields: [categoryId], references: [id])
   autoTaskApplication AutoTaskApplication[]
 }
 
@@ -171,8 +173,8 @@ model AutoTaskApplication {
   userId          Int
   taskId          Int
   isConfirmed     Boolean   @default(false)
-  lastCompletedAt DateTime?
   createdAt       DateTime  @default(now())
+  lastCompletedAt DateTime?
   task            AutoTask  @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -188,6 +190,28 @@ model AdminActionLog {
   newData    Json?
   adminId    Int
   createdAt  DateTime @default(now())
+}
+
+model Notification {
+  id           Int                @id @default(autoincrement())
+  userId       String
+  message      String
+  scheduledFor DateTime?
+  status       NotificationStatus @default(PENDING)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  user         User               @relation(fields: [userId], references: [telegramId])
+}
+
+model AutoTaskCategory {
+  id        Int          @id @default(autoincrement())
+  name      String
+  type      AutoTaskType
+  createdAt DateTime     @default(now())
+  updatedAt DateTime
+  AutoTask  AutoTask[]
+
+  @@unique([name, type])
 }
 
 enum UserRole {
@@ -232,17 +256,6 @@ enum EventType {
   DISPUTE_RESOLVED
   USER_MESSAGE
   RATING_GIVEN
-}
-
-model Notification {
-  id           Int               @id @default(autoincrement())
-  userId       String
-  message      String
-  scheduledFor DateTime?
-  status       NotificationStatus @default(PENDING)
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  user         User              @relation(fields: [userId], references: [telegramId])
 }
 
 enum NotificationStatus {

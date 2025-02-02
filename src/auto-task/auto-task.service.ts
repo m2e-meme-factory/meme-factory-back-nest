@@ -228,4 +228,24 @@ export class AutoTaskService {
 			isConfirmed: true
 		}
 	}
+
+	async getAutoTasksByCategory(category: string): Promise<AutoTask[]> {
+		const tasks = await this.prisma.autoTask.findMany({
+			where: {
+				AutoTaskCategory: {
+					name: category
+				}
+			},
+			include: {
+				autoTaskApplication: true,
+				AutoTaskCategory: true
+			}
+		});
+
+		if (!tasks || tasks.length === 0) {
+			throw new NotFoundException(`Tasks for category ${category} not found`);
+		}
+
+		return tasks;
+	}
 }
