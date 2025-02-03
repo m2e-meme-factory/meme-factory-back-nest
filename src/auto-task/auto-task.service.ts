@@ -25,44 +25,15 @@ export class AutoTaskService {
 		private readonly transactionService: TransactionService
 	) {}
 
-	async getAutoTaskApplications(
-		userId?: number,
-		taskId?: number
-	): Promise<AutoTaskApplication[]> {
-		try {
-			const whereClause: any = {}
-
-			if (userId) {
-				whereClause.userId = userId
-			}
-
-			if (taskId) {
-				whereClause.taskId = taskId
-			}
-
-			const applications = await this.prisma.autoTaskApplication.findMany({
-				where: whereClause,
-				include: {
-					task: true,
-					user: true
-				}
-			})
-
-			return applications
-		} catch (error) {
-			throw new InternalServerErrorException(
-				`Error fetching auto task applications: ${error}`
-			)
-		}
-	}
-
 	async getAllAutoTasks(userId: number): Promise<AutoTask[]> {
 		return await this.prisma.autoTask.findMany({
-			include: { autoTaskApplication: {
-				where: {
-					userId: userId
+			include: {
+				autoTaskApplication: {
+					where: {
+						userId: userId
+					}
 				}
-			} }
+			}
 		})
 	}
 
@@ -73,117 +44,98 @@ export class AutoTaskService {
 		})
 	}
 
-	async applyForTask(taskId: number, user: User): Promise<AutoTaskApplication> {
-		try {
-			const task = await this.prisma.autoTask.findUnique({
-				where: { id: taskId }
-			})
-
-			if (!task) {
-				throw new NotFoundException('Task not found')
-			}
-
-			const existingApplication =
-				await this.prisma.autoTaskApplication.findUnique({
-					where: { userId_taskId: { userId: user.id, taskId } }
-				})
-
-			if (existingApplication) {
-				throw new ForbiddenException('You have already applied for this task.')
-			}
-
-			const application = await this.prisma.autoTaskApplication.create({
-				data: {
-					userId: user.id,
-					taskId
-				}
-			})
-
-			return application
-		} catch (error) {
-			throw new InternalServerErrorException(
-				`Error applying for task: ${error}`
-			)
-		}
-	}
-
 	async claimTask(taskId: number, userId: number): Promise<AutoTaskApplication> {
-		const application = await this.prisma.autoTaskApplication.findFirst({
-			where: { taskId, userId },
-			include: { task: true }
-		});
-
-		if (!application) {
-			throw new NotFoundException('Application not found');
-		}
-
-		const task = await this.prisma.autoTask.findFirst({ where: { id: taskId } });
+		const task = await this.prisma.autoTask.findFirst({
+			where: { id: taskId }
+		})
 
 		if (!task) {
-			throw new NotFoundException('Task not found');
+			throw new NotFoundException('Task not found')
 		}
 
-		await this.verifyTaskCompletion(task, application, userId);
+		const existingApplication = await this.prisma.autoTaskApplication.findFirst({
+			where: {
+				userId,
+				taskId
+			}
+		})
+
+		await this.verifyTaskCompletion(task, existingApplication, userId)
 
 		const updatedApplication = await this.prisma.$transaction(async prisma => {
-			const confirmedApplication = await prisma.autoTaskApplication.update({
-				where: { id: application.id },
-				data: { 
-					isConfirmed: true,
-					lastCompletedAt: new Date()
-				}
-			});
+			let application
+
+			if (existingApplication) {
+				application = await prisma.autoTaskApplication.update({
+					where: { id: existingApplication.id },
+					data: {
+						isConfirmed: true,
+						lastCompletedAt: new Date()
+					}
+				})
+			} else {
+				application = await prisma.autoTaskApplication.create({
+					data: {
+						userId,
+						taskId,
+						isConfirmed: true,
+						lastCompletedAt: new Date()
+					}
+				})
+			}
 
 			const createTransactionDto: CreateTransactionDto = {
-				taskId: confirmedApplication.taskId,
+				taskId: application.taskId,
 				toUserId: userId,
-				amount: application.task.reward,
+				amount: task.reward,
 				type: TransactionType.SYSTEM
-			};
+			}
 
-			await this.transactionService.createTransaction(createTransactionDto);
+			await this.transactionService.createTransaction(createTransactionDto)
 
-			return confirmedApplication;
-		});
+			return application
+		})
 
-		return updatedApplication;
+		return updatedApplication
 	}
 
 	private async verifyTaskCompletion(
 		task: AutoTask,
-		application: AutoTaskApplication,
+		application: AutoTaskApplication | null,
 		userId: number
 	): Promise<void> {
-		if (application.isConfirmed && task.taskType !== AutoTaskType.DAILY_CHECK) {
-			throw new ForbiddenException('Task already claimed.');
-		}
-
 		switch (task.verificationMethod) {
 			case VerificationMethod.DAILY_CHECK:
-				await this.verifyDailyCheck(application);
-				break;
+				await this.verifyDailyCheck(application)
+				break
 			case VerificationMethod.WALLET_VERIFICATION:
-				await this.verifyWalletConnection(userId);
-				break;
+				if (application?.isConfirmed) {
+					throw new ForbiddenException('Wallet connection reward already claimed.')
+				}
+				await this.verifyWalletConnection(userId)
+				break
 			case VerificationMethod.WELCOME:
-				await this.verifyWelcomeBonus(application);
-				break;
+				await this.verifyWelcomeBonus(application)
+				break
 			case VerificationMethod.NONE:
-				break;
+				if (application?.isConfirmed) {
+					throw new ForbiddenException('Reward already claimed.')
+				}
+				break
 		}
 	}
 
-	private async verifyDailyCheck(application: AutoTaskApplication): Promise<void> {
-		if (application.lastCompletedAt) {
-			const lastComplete = new Date(application.lastCompletedAt);
-			const now = new Date();
+	private async verifyDailyCheck(application: AutoTaskApplication | null): Promise<void> {
+		if (application?.lastCompletedAt) {
+			const lastComplete = new Date(application.lastCompletedAt)
+			const now = new Date()
 			
 			if (
 				lastComplete.getDate() === now.getDate() &&
 				lastComplete.getMonth() === now.getMonth() &&
 				lastComplete.getFullYear() === now.getFullYear()
 			) {
-				throw new ForbiddenException('Daily task already completed today.');
+				throw new ForbiddenException('Daily task already completed today.')
 			}
 		}
 	}
@@ -191,30 +143,44 @@ export class AutoTaskService {
 	private async verifyWalletConnection(userId: number): Promise<void> {
 		const userInfo = await this.prisma.userInfo.findFirst({
 			where: { userId }
-		});
+		})
 
 		if (!userInfo) {
-			throw new NotFoundException('User info not found');
+			throw new NotFoundException('User info not found')
 		}
 
 		if (!userInfo.tonWalletAddress) {
-			throw new ForbiddenException('TON wallet not connected.');
+			throw new ForbiddenException('TON wallet not connected.')
+		}
+
+		const existingWalletTask = await this.prisma.autoTaskApplication.findFirst({
+			where: {
+				userId,
+				task: {
+					taskType: AutoTaskType.WALLET_CONNECT
+				},
+				isConfirmed: true
+			}
+		})
+
+		if (existingWalletTask) {
+			throw new ForbiddenException('Wallet connection reward already claimed.')
 		}
 	}
 
-	private async verifyWelcomeBonus(application: AutoTaskApplication): Promise<void> {
-		if (application.isConfirmed) {
-			throw new ForbiddenException('Welcome bonus already claimed.');
+	private async verifyWelcomeBonus(application: AutoTaskApplication | null): Promise<void> {
+		if (application?.isConfirmed) {
+			throw new ForbiddenException('Welcome bonus already claimed.')
 		}
 	}
 
 	async getTaskStatus(userId: number): Promise<TaskStatusResponse[]> {
 		const user = await this.prisma.user.findUnique({
 			where: { id: userId }
-		});
+		})
 
 		if (!user) {
-			throw new NotFoundException('User not found');
+			throw new NotFoundException('User not found')
 		}
 
 		const tasks = await this.prisma.autoTask.findMany({
@@ -223,7 +189,7 @@ export class AutoTaskService {
 					where: { userId }
 				}
 			}
-		});
+		})
 
 		return tasks.map(task => ({
 			taskId: task.id,
@@ -231,26 +197,27 @@ export class AutoTaskService {
 			isCompleted: task.autoTaskApplication.length > 0 && task.autoTaskApplication[0].isConfirmed,
 			lastCompletedAt: task.autoTaskApplication[0]?.lastCompletedAt || null,
 			canBeClaimed: this.canTaskBeClaimed(task, task.autoTaskApplication[0])
-		}));
+		}))
 	}
 
 	private canTaskBeClaimed(task: AutoTask, application?: AutoTaskApplication): boolean {
-		if (!application) return true;
+		if (!application) return true
 		
 		switch (task.taskType) {
 			case AutoTaskType.DAILY_CHECK:
-				if (!application.lastCompletedAt) return true;
-				const lastComplete = new Date(application.lastCompletedAt);
-				const now = new Date();
+				if (!application.lastCompletedAt) return true
+				const lastComplete = new Date(application.lastCompletedAt)
+				const now = new Date()
 				return !(
 					lastComplete.getDate() === now.getDate() &&
 					lastComplete.getMonth() === now.getMonth() &&
 					lastComplete.getFullYear() === now.getFullYear()
-				);
+				)
 			case AutoTaskType.WELCOME_BONUS:
-				return !application.isConfirmed;
+			case AutoTaskType.WALLET_CONNECT:
+				return !application.isConfirmed
 			default:
-				return !application.isConfirmed;
+				return !application.isConfirmed
 		}
 	}
 
@@ -260,5 +227,25 @@ export class AutoTaskService {
 		return {
 			isConfirmed: true
 		}
+	}
+
+	async getAutoTasksByCategory(category: string): Promise<AutoTask[]> {
+		const tasks = await this.prisma.autoTask.findMany({
+			where: {
+				AutoTaskCategory: {
+					name: category
+				}
+			},
+			include: {
+				autoTaskApplication: true,
+				AutoTaskCategory: true
+			}
+		});
+
+		if (!tasks || tasks.length === 0) {
+			throw new NotFoundException(`Tasks for category ${category} not found`);
+		}
+
+		return tasks;
 	}
 }
