@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsInt, IsOptional, IsString, IsUrl } from 'class-validator';
 import { Decimal } from '@prisma/client/runtime/library';
+import { ALL_AUTOTASKS } from 'src/shared/autoTasks';
 
 export class GetAutoTaskDto {
   @ApiProperty({
@@ -56,4 +57,17 @@ export class GetAutoTaskDto {
   @IsOptional()
   @IsBoolean()
   isConfirmed?: boolean;
+}
+
+
+
+export class ClaimAutoTaskDto {
+  @ApiProperty({
+    description: 'Название задачи, которую нужно выполнить',
+    example: 'checkin',
+    enum: [
+      ALL_AUTOTASKS.map((autoTask) => autoTask.name),
+    ],
+  })
+  taskName: string;
 }

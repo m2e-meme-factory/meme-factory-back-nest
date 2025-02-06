@@ -8,5 +8,6 @@ import { AutoTaskDefaultController } from './auto-task-default.controller';
 @Module({
   controllers: [AutoTaskController, AutoTaskDefaultController],
   providers: [AutoTaskService, TransactionService, UserService],
+  exports: [AutoTaskService]
 })
 export class AutoTaskModule {}

@@ -11,7 +11,7 @@ import { InjectBot } from 'nestjs-telegraf'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { TransactionService } from 'src/transaction/transaction.service'
 import { UserService } from 'src/user/user.service'
-import { Context, Telegraf } from 'telegraf'
+import { Context, Markup, Telegraf } from 'telegraf'
 
 @Injectable()
 export class AuthService {
@@ -49,15 +49,26 @@ export class AuthService {
 				})
 
 				if (inviter) {
-					await this.bot.telegram.sendMessage(
-						inviter.telegramId,
-						`Somebody was invited by your refferal code ${metaTag ? `\nMeta tag:  ${metaTag.tag}` : ''}`
-					)
+					try {
+						await this.bot.telegram.sendMessage(
+							inviter.telegramId,
+							'Your friend Joined Meme Factory!',
+							{
+								parse_mode: 'HTML',
+								reply_markup: Markup.inlineKeyboard([
+									Markup.button.webApp("Lanuch now", process.env.APP_URL + "/friends")
+								  ]).reply_markup
+							}
+						)
+					} 
+					catch (err) {
+						console.log("Unable to send ref added message to inviter", err.name, err.message)
+					}
 
 					await this.transactionService.createTransaction({
 						toUserId: inviter.id,
-						amount: new Decimal(100),
-						type: TransactionType.SYSTEM
+						amount: new Decimal(5000),
+						type: TransactionType.REFERAL
 					})
 				}
 

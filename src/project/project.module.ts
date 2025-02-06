@@ -14,7 +14,7 @@ import { NotificationService } from 'src/notification/notification.service';
 @Module({
   imports: [PrismaModule],
   providers: [ProjectService, TelegramUpdate, UserService, EventService, ProjectProgressService, TaskProgressService, TransactionService, NotificationService],
-  controllers: [ProjectController, TaskController, ProjectProgressController],
+  // controllers: [ProjectController, TaskController, ProjectProgressController],
   exports: [ProjectService]
 })
 export class ProjectModule {}

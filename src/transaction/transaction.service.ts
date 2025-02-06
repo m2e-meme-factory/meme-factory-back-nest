@@ -2,11 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { Transaction, TransactionType } from '@prisma/client'
 import {
 	CreateTransactionDto,
+	SumTransactionByTypeDto,
 	UpdateTransactionDto
 } from './dto/transaction.dto'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { UserService } from 'src/user/user.service'
-// import { Decimal } from '@prisma/client/runtime/library'
+import { Decimal } from '@prisma/client/runtime/library'
+
+const REF_PERSENTAGE = 0.1;
 
 @Injectable()
 export class TransactionService {
@@ -14,6 +17,33 @@ export class TransactionService {
 		private readonly prisma: PrismaService,
 		private readonly userService: UserService
 	) {}
+
+	async createReferalTransaction (taskId: number, invitedUserId: number, reward: number) {
+		const user = await this.prisma.user.findFirst({
+			where: {
+				id: invitedUserId
+			}
+		})
+
+		if (!user.inviterRefCode) return; 
+
+			const inviter = await this.prisma.user.findFirst({
+				where: {
+					refCode: user.inviterRefCode
+				}
+			})
+			
+		if (!invitedUserId) return;
+
+		const createTransactionDto: CreateTransactionDto = {
+			taskId,
+			toUserId: inviter.id,
+			amount: new Decimal(reward * REF_PERSENTAGE),
+			type: TransactionType.REFERAL
+		}
+
+		return this.createTransaction(createTransactionDto)
+	}
 
 	async createTransaction(data: CreateTransactionDto): Promise<Transaction> {
 		return this.prisma.$transaction(async prisma => {
@@ -89,5 +119,18 @@ export class TransactionService {
 			throw new NotFoundException(`Transaction with ID ${id} not found`)
 		}
 		return transaction
+	}
+
+	
+	async sumByType(dto: SumTransactionByTypeDto) {
+		return this.prisma.transaction.aggregate({
+			where: { 
+				toUserId: dto.toUserId,
+				type: dto.type
+			},
+			_sum: {
+				amount: true
+			}
+		})
 	}
 }

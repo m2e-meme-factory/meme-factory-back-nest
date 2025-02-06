@@ -76,3 +76,16 @@ export class UpdateTransactionDto {
 	@IsOptional()
 	type?: TransactionType
 }
+
+
+
+export class SumTransactionByTypeDto {
+	@ApiProperty()
+	@IsInt()
+	toUserId: number
+
+	@ApiProperty({ enum: TransactionType, example: "REFERAL" })
+	@IsEnum(TransactionType)
+	@IsNotEmpty()
+	type: TransactionType
+}

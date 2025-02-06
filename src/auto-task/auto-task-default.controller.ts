@@ -67,7 +67,8 @@ export class AutoTaskDefaultController {
 		  const user = req['user'];
 		  const { amount } = claimTaskDto;
 	
-		  return await this.autoTaskService.newTransaction(amount, user.id);
+		  return {isConfirmed: false};
+		//   return await this.autoTaskService.newTransaction(amount, user.id);
 		} catch (error) {
 		  if (
 			error instanceof ForbiddenException ||

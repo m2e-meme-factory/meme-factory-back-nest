@@ -20,7 +20,10 @@ model User {
   balance              Decimal               @default(0)
   isSended             Boolean               @default(false)
   wasOpened            Boolean               @default(false)
+  
+  AutoTaskClaims       AutoTaskClaims[]
   AutoTaskApplication  AutoTaskApplication[]
+
   events               Event[]
   Notification         Notification[]
   ProgressProject      ProgressProject[]
@@ -181,6 +184,20 @@ model AutoTaskApplication {
   @@unique([userId, taskId])
 }
 
+
+model AutoTaskClaims {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  taskName        String
+  isConfirmed     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  lastCompletedAt DateTime?
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskName])
+}
+
+
 model AdminActionLog {
   id         Int      @id @default(autoincrement())
   action     String
@@ -232,6 +249,7 @@ enum TransactionType {
   DEPOSIT
   WITHDRAWAL
   SYSTEM
+  REFERAL
 }
 
 enum ProgressStatus {
@@ -267,8 +285,22 @@ enum NotificationStatus {
 enum AutoTaskType {
   DAILY_CHECK
   WELCOME_BONUS
-  WALLET_CONNECT
   CUSTOM
+  WALLET_CONNECT
+  
+//   CHECKIN
+// WELCOME_BONUS
+// SHERE_IN_STORIES
+// ACCOUNT_BIO
+// WEB_URL
+// OPEN_X
+// OPEN_TG
+// OPEN_YOUTUBE
+// OPEN_TIKTOK
+// OPEN_REDDIT
+// OPEN_DISCORD
+// OPEN_WHITEPAPER
+// OPEN_PITCHDEK
 }
 
 enum VerificationMethod {

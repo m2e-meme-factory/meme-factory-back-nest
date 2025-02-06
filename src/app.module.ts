@@ -16,7 +16,20 @@ import { AutoTaskModule } from './auto-task/auto-task.module';
 import { NotificationModule } from './notification/notification.module';
 
 @Module({
-  imports: [PrismaModule, UserModule, ProjectModule, AuthModule, FileModule, TelegramModule, TransactionModule, EventModule, TonModule, UserInfoModule, AutoTaskModule, NotificationModule],
+  imports: [
+    PrismaModule, 
+    UserModule, 
+    ProjectModule, 
+    AuthModule, 
+    FileModule, 
+    TelegramModule, 
+    TransactionModule, 
+    EventModule, 
+    TonModule, 
+    UserInfoModule, 
+    AutoTaskModule, 
+    NotificationModule
+  ],
   controllers: [FileController],
   providers: [FileService, PrismaService],
 })

@@ -2,6 +2,7 @@ import { Controller, Query, Req } from '@nestjs/common'
 import { Body, Delete, Get, Param, Post, Put } from '@nestjs/common'
 import {
 	CreateTransactionDto,
+	SumTransactionByTypeDto,
 	UpdateTransactionDto
 } from './dto/transaction.dto'
 import { TransactionService } from './transaction.service'
@@ -260,5 +261,23 @@ export class TransactionController {
 	async delete(@Param('id') id: string): Promise<any> {
 		const transactionId = parseInt(id)
 		return this.transactionService.delete(transactionId)
+	}
+
+	@Post('/sum-by-type')
+	@ApiOperation({ summary: 'Получить сумму транзакции по типу' })
+	@ApiBody({ type: SumTransactionByTypeDto })
+	async sumByType(
+		@Body() txDto: SumTransactionByTypeDto,
+		@Req() req: Request
+	) {
+		txDto["toUserId"] = req["user"].id
+		try {
+			return (await this.transactionService.sumByType(txDto))._sum
+		}
+		catch(err) {
+			return {
+				status: 401
+			}
+		}
 	}
 }
